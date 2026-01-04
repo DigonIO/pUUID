@@ -11,7 +11,8 @@ from sqlalchemy.pool.base import (
     _ConnectionRecord,  # pyright: ignore[reportPrivateUsage]
 )
 
-from puuid import PUUID, SqlPUUID
+from puuid import PUUID
+from puuid.sqlalchemy import SqlPUUID
 
 ################################################################################
 #### Types & Fixtures
@@ -28,7 +29,9 @@ class UserUUID(PUUID[Literal["user"]]):
 class UserORM(BaseORM):
     __tablename__ = "item_table"
 
-    id: Mapped[UserUUID] = mapped_column(SqlPUUID(UserUUID), primary_key=True)
+    id: Mapped[UserUUID] = mapped_column(
+        SqlPUUID(UserUUID, prefix_length=4), primary_key=True, default=UserUUID.factory
+    )
 
 
 class AddressUUID(PUUID[Literal["address"]]):

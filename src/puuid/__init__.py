@@ -9,10 +9,8 @@ __author__ = "Jendrik Potyka, Fabian Preiss"
 
 
 from puuid.base import PUUID, PUUIDError
-from puuid.sqlalchemy import SqlPUUID
 
 __all__ = [
     "PUUID",
     "PUUIDError",
-    "SqlPUUID",
 ]
