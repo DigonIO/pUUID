@@ -1,0 +1,22 @@
+[project]
+name = "puuid"
+version = "0.1.0"
+description = "Prefixed UUID's with Pydantic & SQLAlchemy support."
+readme = "README.md"
+authors = [
+    { name = "Jendrik Potyka", email = "jpotyka@digon.io" },
+    { name = "Fabian Preiss", email = "fpreiss@digon.io" },
+]
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.12.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+sqlalchemy = [
+    "sqlalchemy>=2.0.45",
+]
