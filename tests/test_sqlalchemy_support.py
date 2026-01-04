@@ -1,9 +1,15 @@
 from typing import Generator, Literal
+from sqlite3 import Connection
 
 import pytest
 from sqlalchemy.engine import Engine, create_engine
+from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.event import listen
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.pool.base import (
+    _ConnectionRecord,  # pyright: ignore[reportPrivateUsage]
+)
 
 from puuid import PUUID, SqlPUUID
 
@@ -22,11 +28,7 @@ class UserUUID(PUUID[Literal["user"]]):
 class UserORM(BaseORM):
     __tablename__ = "item_table"
 
-    id: Mapped[UserUUID] = mapped_column(
-        SqlPUUID(UserUUID),
-        primary_key=True,
-        default=UserUUID.factory,
-    )
+    id: Mapped[UserUUID] = mapped_column(SqlPUUID(UserUUID), primary_key=True)
 
 
 class AddressUUID(PUUID[Literal["address"]]):
@@ -37,9 +39,10 @@ class AddressORM(BaseORM):
     __tablename__ = "address_table"
 
     id: Mapped[AddressUUID] = mapped_column(
-        SqlPUUID(AddressUUID, prefix_length=7),
-        primary_key=True,
-        default=AddressUUID.factory,
+        SqlPUUID(AddressUUID, prefix_length=7), primary_key=True
+    )
+    user_id: Mapped[AddressUUID] = mapped_column(
+        SqlPUUID(UserUUID), ForeignKey(UserORM.id), default=None, nullable=True
     )
 
 
@@ -56,18 +59,57 @@ def engine() -> Generator[Engine, None, None]:
     engine.dispose()
 
 
-from sqlite3 import Connection
+@pytest.fixture()
+def db(engine: Engine) -> Generator[Session, None, None]:
+    db_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
-from sqlalchemy.pool.base import (
-    _ConnectionRecord,
-)  # pyright: ignore[reportPrivateUsage]
+    with db_factory() as db:
+        try:
+            yield db
+        finally:
+            db.rollback()
+            db.close()
+
 
 ################################################################################
 #### Tests
 ################################################################################
 
 
-def test_success() -> None: ...
+def test_serialize(db: Session) -> None:
+
+    user = UserORM(id=UserUUID())
+    address = AddressORM(id=AddressUUID())
+
+    db.add(user)
+    db.add(address)
+    db.flush()
+
+
+def test_deserialize(db: Session) -> None:
+
+    user_id = UserUUID()
+    user_ref_1 = UserORM(id=user_id)
+
+    db.add(user_ref_1)
+    db.flush()
+    db.commit()
+
+    user_ref_2: UserORM | None = db.query(UserORM).get(user_id)
+    assert user_ref_2 is not None
+    assert user_ref_1.id == user_ref_2.id
+
+    address_ref_1 = AddressORM(id=AddressUUID())
+    address_id = address_ref_1.id
+
+    db.add(address_ref_1)
+    db.flush()
+    db.commit()
+
+    address_ref_2: AddressORM | None = db.query(AddressORM).get(address_id)
+
+    assert isinstance(address_ref_2, AddressORM)
+    assert address_ref_2.user_id is None
 
 
 ################################################################################
