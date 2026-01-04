@@ -1,10 +1,14 @@
-from typing import Self, Any
+from typing import Any, Self
 from uuid import UUID, uuid4
 
 from pydantic_core import core_schema
 
 
-class PUUIDError(Exception): ...
+class PUUIDError(Exception):
+    message: str
+
+    def __init__(self, message: str = ""):
+        self.message = message
 
 
 class PUUID[TPrefix: str]:
@@ -31,7 +35,7 @@ class PUUID[TPrefix: str]:
 
         expected = f"{cls._prefix}_"
         if not serial_puuid.startswith(expected):
-            raise PUUIDError(f"Expected prefix '{expected}' for '{serial_puuid}'!")
+            raise PUUIDError(f"Expected prefix '{cls._prefix}' for '{serial_puuid}'!")
 
         serial_uuid = serial_puuid[len(expected) :]
         return cls(value=UUID(serial_uuid))
