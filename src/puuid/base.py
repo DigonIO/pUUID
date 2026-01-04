@@ -33,12 +33,19 @@ class PUUID[TPrefix: str]:
     @classmethod
     def from_string(cls, serial_puuid: str) -> Self:
 
-        expected = f"{cls._prefix}_"
-        if not serial_puuid.startswith(expected):
-            raise PUUIDError(f"Expected prefix '{cls._prefix}' for '{serial_puuid}'!")
+        try:
+            prefix, serialized_uuid = serial_puuid.split("_", 1)
+            deserialized_uuid = UUID(serialized_uuid)
 
-        serial_uuid = serial_puuid[len(expected) :]
-        return cls(value=UUID(serial_uuid))
+            if prefix != cls._prefix:
+                raise ValueError
+
+            return cls(deserialized_uuid)
+
+        except ValueError:
+            raise PUUIDError(
+                f"Unable to deserialize prefix '{cls._prefix}', separator '_' or UUID for '{cls.__name__}' from '{serial_puuid}'!"
+            )
 
     @classmethod
     def factory(cls) -> Self:
@@ -69,11 +76,11 @@ class PUUID[TPrefix: str]:
                 case str():
                     try:
                         return cls.from_string(value)
-                    except Exception as e:
-                        raise ValueError(str(e)) from e
+                    except PUUIDError as err:
+                        raise ValueError(str(err)) from err
                 case _:
-                    raise TypeError(
-                        f"'{cls.__name__}' can not be created! '{value!r}' has invalid type!"
+                    raise ValueError(
+                        f"'{cls.__name__}' can not be created from invalid type '{type(value)}' with value '{value}'!"
                     )
 
         def serialize(value: PUUID) -> str:

@@ -12,14 +12,14 @@ from puuid import PUUID, SqlPUUID
 ################################################################################
 
 
-class TestORM(DeclarativeBase): ...
+class BaseORM(DeclarativeBase): ...
 
 
 class UserUUID(PUUID[Literal["user"]]):
     _prefix = "user"
 
 
-class ItemORM(TestORM):
+class UserORM(BaseORM):
     __tablename__ = "item_table"
 
     id: Mapped[UserUUID] = mapped_column(
@@ -33,7 +33,7 @@ class AddressUUID(PUUID[Literal["address"]]):
     _prefix = "address"
 
 
-class AddressORM(TestORM):
+class AddressORM(BaseORM):
     __tablename__ = "address_table"
 
     id: Mapped[AddressUUID] = mapped_column(
@@ -50,9 +50,9 @@ def engine() -> Generator[Engine, None, None]:
     engine = create_engine(url, future=True)
     listen(engine, "connect", set_sqlite_pragma)
 
-    TestORM.metadata.create_all(engine)
+    BaseORM.metadata.create_all(engine)
     yield engine
-    TestORM.metadata.drop_all(engine)
+    BaseORM.metadata.drop_all(engine)
     engine.dispose()
 
 

@@ -33,13 +33,24 @@ def test_create_from_str() -> None:
     assert str(user_id) == serial_user_id
 
 
-def test_create_from_str_with_error() -> None:
-    serial_user_id = f"invoice_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
-
+@pytest.mark.parametrize(
+    "serial_user_id",
+    [
+        "invoice_1a3e0e89-a2d8-4950-bafa-24020e09b2a6",
+        "_1a3e0e89-a2d8-4950-bafa-24020e09b2a5",
+        "1a3e0e89-a2d8-4950-bafa-24020e09b2a5",
+        "user_   ",
+        "invoice_",
+        "user",
+        "_",
+        "user1a3e0e89-a2d8-4950-bafa-24020e09b2a5",
+    ],
+)
+def test_create_from_invalid_str(serial_user_id: str) -> None:
     with pytest.raises(PUUIDError) as err:
         user_id = UserUUID.from_string(serial_user_id)
 
-    err_msg = f"Expected prefix 'user' for '{serial_user_id}'!"
+    err_msg = f"Unable to deserialize prefix 'user', separator '_' or UUID for 'UserUUID' from '{serial_user_id}'!"
     assert err.value.message == err_msg
 
 
