@@ -1,0 +1,165 @@
+stages:
+  - analysis
+  - test
+  - build_1
+  - build_2
+  - upload
+  - release
+
+variables:
+  # v1.24.0-debug
+  # https://console.cloud.google.com/artifacts/docker/kaniko-project/us/gcr.io/executor/sha256:2562c4fe551399514277ffff7dcca9a3b1628c4ea38cb017d7286dc6ea52f4cd
+  IMG_KANIKO: "gcr.io/kaniko-project/executor@sha256:2562c4fe551399514277ffff7dcca9a3b1628c4ea38cb017d7286dc6ea52f4cd"
+
+  # https://hub.docker.com/layers/bitnamilegacy/kubectl/1.32.4/images/sha256-1f0f5615c70c3570a8ff585f7603626b8daa46dfd905d86c6662139f189522de
+  IMG_KUBECTL: bitnamilegacy/kubectl:1.32.4
+
+  # debug
+  # https://console.cloud.google.com/artifacts/docker/go-containerregistry/us/gcr.io/crane/sha256:fbdf6d55c5ae90d9ae637b9bd9f10119496fdf18a3b5f9cd3078ae6044161c18
+  IMG_CRANE: "gcr.io/go-containerregistry/crane@sha256:fbdf6d55c5ae90d9ae637b9bd9f10119496fdf18a3b5f9cd3078ae6044161c18"
+
+  IMG_ARCH_LINUX: archlinux:base-20251228.0.475343
+
+  # 0.9.8-python3.14-bookworm
+  # https://github.com/astral-sh/uv/pkgs/container/uv/569901911?tag=0.9.8-python3.14-bookworm
+  IMG_PYTHON_UV_3_14: "ghcr.io/astral-sh/uv@sha256:cd33eb64e2c434b4d5cd843192ef55e7d7a21e0dd590586550d1e44eab672456"
+
+  # IMG_DOC: ${CONTAINER_REGISTRY_URL}/pypermission-doc:${CI_COMMIT_SHORT_SHA}
+
+####################################################################################################
+### Analysis Stage
+####################################################################################################
+
+ruff:
+  stage: analysis
+  image: $IMG_PYTHON_UV_3_14
+  script:
+    - uv sync --all-groups
+    - uv run ruff check src
+  allow_failure: true
+
+mypy:
+  stage: analysis
+  image: $IMG_PYTHON_UV_3_14
+  script:
+    - uv sync --all-groups
+    - uv run mypy src
+  allow_failure: true
+
+isort:
+  stage: analysis
+  image: $IMG_PYTHON_UV_3_14
+  script:
+    - uv sync --all-groups
+    - uv run isort --check-only src tests
+  allow_failure: false
+
+black:
+  stage: analysis
+  image: $IMG_PYTHON_UV_3_14
+  script:
+    - uv sync --all-groups
+    - uv run black --check src tests
+  allow_failure: false
+
+####################################################################################################
+### Test Stage
+####################################################################################################
+
+pytest_3_14:
+  stage: test
+  image: $IMG_PYTHON_UV_3_14
+  script:
+    - uv sync --all-groups
+    - uv run pytest --cov=src/puuid/ tests
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    paths:
+      - .coverage
+
+# pydoctest_3_14:
+#   stage: test
+#   image: $IMG_PYTHON_UV_3_14
+#   script:
+#     - uv sync --all-groups
+#     - uv run pytest --markdown-docs --markdown-docs-syntax=superfences docs/docs
+
+####################################################################################################
+### Documentation Stage
+####################################################################################################
+
+# doc_site:
+#   stage: build_1
+#   image: $IMG_PYTHON_UV_3_14
+#   script:
+#     - uv sync --all-groups
+#     - uv run coverage html
+#     - uv run mkdocs build -f docs/mkdocs.yml
+#   artifacts:
+#     paths:
+#       - docs/site
+
+pkg_build:
+  stage: build_1
+  image: $IMG_PYTHON_UV_3_14
+  script:
+    - uv build
+  artifacts:
+    paths:
+      - dist
+
+####################################################################################################
+#### Stage - build
+####################################################################################################
+
+# doc_image:
+#   stage: build_2
+#   image:
+#     name: $IMG_KANIKO
+#     entrypoint: [""]
+#   script:
+#     - >
+#       /kaniko/executor --context ./docs --destination "${IMG_DOC}" --tarPath app_image.tar
+#       --no-push --force
+#   artifacts:
+#     paths:
+#       - app_image.tar
+
+####################################################################################################
+#### Stage - upload
+####################################################################################################
+
+# doc_upload:
+#   stage: upload
+#   image:
+#     name: ${IMG_CRANE}
+#     entrypoint: [""]
+#   script:
+#     - crane auth login -u "${CONTAINER_REGISTRY_USER}" -p "${CONTAINER_REGISTRY_PW}" "${CONTAINER_REGISTRY_URL}"
+#     - crane push app_image.tar ${IMG_DOC}
+#   rules:
+#     - if: $CI_COMMIT_REF_NAME == "main"
+
+####################################################################################################
+### Release Stage
+####################################################################################################
+
+# doc_release:
+#   stage: release
+#   image:
+#     name: ${IMG_KUBECTL}
+#     entrypoint: [""]
+#   script:
+#     - source ci/setup_kubectl.sh
+#     - envsubst < docs/k8s.yaml | kubectl apply -f -
+#   rules:
+#     - if: $CI_COMMIT_REF_NAME == "main"
+
+pkg_release:
+  stage: release
+  image:
+    name: ${IMG_PYTHON_UV_3_14}
+  script:
+    - uv publish
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^\d+.\d+.\d+/'
