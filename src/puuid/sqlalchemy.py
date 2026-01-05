@@ -2,6 +2,7 @@ from typing import final, override
 
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.types import String, TypeDecorator
+
 from puuid.base import PUUID
 
 _SEPARATOR_LENGTH = 1

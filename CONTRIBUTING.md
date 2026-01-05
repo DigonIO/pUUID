@@ -11,8 +11,8 @@ uv sync --all-groups
 ## Formatting
 
 ```bash
-uv run black ./src ./tests
 uv run isort ./src ./tests
+uv run black ./src ./tests
 ```
 
 ## Testing
@@ -23,12 +23,32 @@ uv run isort ./src ./tests
 uv run pytest --cov=src/puuid/ tests
 ```
 
+### Doc tests
+
+```console
+uv run pytest --markdown-docs --markdown-docs-syntax=superfences docs/
+```
+
 ## Visual coverage report
 
 Generate the html coverage report. The command creates a folder `htmlcov` with an `index.html` as landing page.
 
 ```bash
 uv run coverage html
+```
+
+## Documentation
+
+Serve the documentation for easy local development.
+
+```console
+uv run mkdocs serve -f docs/mkdocs.yml
+```
+
+Build the documentation.
+
+```console
+uv run mkdocs build -f docs/mkdocs.yml
 ```
 
 ## Static analysis
@@ -40,8 +60,6 @@ uv run ruff check src
 uv run mypy src
 uv run basedpyright src
 ```
-
-As the development is currently experimental and focussed on the `context_enrichers` module and getting bdd right, we are ignoring the noisy errors in the remaining modules under `src/llm_dispatch` for now.
 
 ## Style Guide
 
@@ -63,7 +81,6 @@ As the development is currently experimental and focussed on the `context_enrich
 ### Code Style
 
 - Avoid nested function definitions except when necessary (e.g. decorators).
-- Use full import paths within the package (e.g. `from llm_dispatch.context_enrichers.snippets import SnippetMeta`).
 - Use `pathlib.Path` instead of `os.path`.
 - Do not concatenate strings with `+`; use f-strings instead.
 - Avoid hard coding class names as string for the `__repr__` and `__str__` methods. Extract the string from the class directly, so if we ever decide to rename the class we do not forget about strings left somewhere.

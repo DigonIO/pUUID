@@ -1,5 +1,6 @@
 from sqlite3 import Connection
 from typing import Generator, Literal
+
 import pytest
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.event import listen

@@ -1,0 +1,84 @@
+site_name: pUUID - Prefixed UUID's for Python.
+site_url: https://puuid.digon.io
+repo_url: https://github.com/DigonIO/puuid
+repo_name: DigonIO/github
+copyright: Copyright © 2026 Jendrik Potyka & Fabian Preiss
+docs_dir: pages
+
+theme:
+  name: material
+  custom_dir: overrides
+  palette:
+    primary: teal
+    scheme: slate
+  features:
+    - content.code.copy
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+plugins:
+  - search
+  - social
+  - privacy:
+      assets_include:
+        - unpkg.com/*
+        - fonts.gstatic.com/*
+        - fonts.googleapis.com/*
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_signature_annotations: true
+            docstring_style: numpy
+            members_order: source
+            show_root_heading: true
+            show_source: false
+  - coverage:
+      page_path: coverage
+      html_report_dir: htmlcov
+
+nav:
+  - README: index.md
+  - API Reference: api_ref.md
+  - Changelog: changelog.md
+  - Coverage Report: coverage.md
+
+hooks:
+  - hooks.py
+
+markdown_extensions:
+  - footnotes
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
+
+extra:
+  analytics:
+    provider: custom
+    url: matomo.digon.io
+  footer_links:
+    - text: "Imprint"
+      href: "https://digon.io/en/impress"
+    - text: "Privacy Policy"
+      href: "https://digon.io/en/privacy"
+  social:
+    - link: https://gitlab.com/DigonIO/puuid
+      icon: fontawesome/brands/gitlab
+    - link: https://github.com/DigonIO/puuid
+      icon: fontawesome/brands/github
+
+extra_javascript:
+  - javascripts/katex.js
+  - https://unpkg.com/katex@0/dist/katex.min.js
+  - https://unpkg.com/katex@0/dist/contrib/auto-render.min.js
+
+extra_css:
+  - https://unpkg.com/katex@0/dist/katex.min.css

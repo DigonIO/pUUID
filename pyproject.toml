@@ -2,11 +2,26 @@
 name = "pUUID"
 version = "1.0.0"
 license = "LGPL-3.0-only"
-description = "Prefixed UUID's for Python with Pydantic & SQLAlchemy support."
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    "Operating System :: OS Independent",
+    "Typing :: Typed",
+]
+description = "Prefixed UUIDs for Python with Pydantic & SQLAlchemy support."
 readme = "README.md"
 authors = [
     { name = "Jendrik Potyka", email = "jpotyka@digon.io" },
     { name = "Fabian Preiss", email = "fpreiss@digon.io" },
+]
+maintainers = [
+    { name = "Jendrik A. Potyka", email = "jpotyka@digon.io" },
+    { name = "Fabian A. Preiss", email = "fpreiss@digon.io" },
 ]
 requires-python = ">=3.14"
 dependencies = ["pydantic>=2.12.5"]
@@ -22,8 +37,14 @@ dev = [
     "coverage>=7.13.1",
     "isort>=7.0.0",
     "marimo>=0.18.4",
+    "mkdocs>=1.6.1",
+    "mkdocs-coverage>=2.0.0",
+    "mkdocs-material[imaging]>=9.7.1",
+    "mkdocstrings[python]>=1.0.0",
+    "pdbpp>=0.11.7",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
+    "pytest-markdown-docs>=0.9.0",
     "ruff>=0.14.10",
     "sqlalchemy[mypy]>=2.0.45",
 ]
@@ -43,6 +64,9 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_any_generics = true
 disallow_subclassing_any = true
+
+[tool.pyright]
+typeCheckingMode = "strict"
 
 [tool.coverage.run]
 branch = true

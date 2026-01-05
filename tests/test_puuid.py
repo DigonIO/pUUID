@@ -1,9 +1,11 @@
 import random
 from typing import Literal, final
-from uuid import UUID, uuid4, uuid1, uuid3, uuid5, uuid6, uuid7, uuid8, NAMESPACE_DNS
+from uuid import NAMESPACE_DNS, UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
+
 import pytest
 
 from puuid import (
+    PUUID,
     PUUIDError,
     PUUIDv1,
     PUUIDv3,
@@ -12,7 +14,6 @@ from puuid import (
     PUUIDv6,
     PUUIDv7,
     PUUIDv8,
-    PUUID,
 )
 from puuid.base import ERR_MSG
 
