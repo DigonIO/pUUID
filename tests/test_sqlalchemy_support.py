@@ -1,6 +1,5 @@
 from sqlite3 import Connection
 from typing import Generator, Literal
-
 import pytest
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.event import listen
@@ -97,7 +96,7 @@ def test_deserialize(db: Session) -> None:
     db.flush()
     db.commit()
 
-    user_ref_2: UserORM | None = db.query(UserORM).get(user_id)
+    user_ref_2: UserORM | None = db.get(UserORM, user_id)
     assert user_ref_2 is not None
     assert user_ref_1.id == user_ref_2.id
 
@@ -108,7 +107,7 @@ def test_deserialize(db: Session) -> None:
     db.flush()
     db.commit()
 
-    address_ref_2: AddressORM | None = db.query(AddressORM).get(address_id)
+    address_ref_2: AddressORM | None = db.get(AddressORM, address_id)
 
     assert isinstance(address_ref_2, AddressORM)
     assert address_ref_2.user_id is None
