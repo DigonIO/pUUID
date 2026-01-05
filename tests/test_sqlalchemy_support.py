@@ -4,10 +4,10 @@ from typing import Generator, Literal
 import pytest
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.event import listen
-from sqlalchemy.orm import (DeclarativeBase, Mapped, Session, mapped_column,
-                            sessionmaker)
-from sqlalchemy.pool.base import \
-    _ConnectionRecord  # pyright: ignore[reportPrivateUsage]
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+from sqlalchemy.pool.base import (  # pyright: ignore[reportPrivateUsage]
+    _ConnectionRecord,
+)
 from sqlalchemy.sql.schema import ForeignKey
 
 from puuid import PUUIDv4
