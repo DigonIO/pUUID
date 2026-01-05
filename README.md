@@ -17,7 +17,8 @@
 
 ## Features
 
-- Prefixed UUIDv4's for Python
+- Prefixed UUID's for Python
+  - Versions: 1, 3, 4, 5
 - Variable prefix length
 - Supports **Pydantic**
 - Supports **SQLAlchemy**
@@ -67,10 +68,10 @@ pip install 'pUUID[sqlalchemy]'
 ```py
 from typing import Literal
 from uuid import UUID
-from puuid import PUUID
+from puuid import PUUIDv4
 
 
-class UserUUID(PUUID[Literal["user"]]):
+class UserUUID(PUUIDv4[Literal["user"]]):
     _prefix = "user"
 
 # Create a random PUUID

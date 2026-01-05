@@ -3,6 +3,8 @@ from uuid import UUID, uuid1, uuid3, uuid4, uuid5
 
 from pydantic_core import core_schema
 
+_ERROR_UUID_VERSION_MISMATCH = "Expected 'UUID' with version '{expected}', got {actual}"
+
 
 class PUUIDError(Exception):
     message: str
@@ -124,8 +126,12 @@ class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
         match node, clock_seq, uuid:
             case int() | None, int() | None, None:
                 self._uuid = uuid1(node, clock_seq)
-            case None, None, UUID():
+            case None, None, UUID(version=1):
                 self._uuid = uuid
+            case None, None, UUID(version=version):
+                raise PUUIDError(
+                    _ERROR_UUID_VERSION_MISMATCH.format(expected=1, actual=version)
+                )
             case _:
                 raise PUUIDError(
                     "Invalid 'PUUIDv1' arguments: Provide 'node'/'clock_seq' or only 'uuid'!"
@@ -162,8 +168,12 @@ class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
         match namespace, name, uuid:
             case UUID(), str() | bytes(), None:
                 self._uuid = uuid3(namespace, name)
-            case None, None, UUID():
+            case None, None, UUID(version=3):
                 self._uuid = uuid
+            case None, None, UUID(version=version):
+                raise PUUIDError(
+                    _ERROR_UUID_VERSION_MISMATCH.format(expected=3, actual=version)
+                )
             case _:
                 raise PUUIDError(
                     "Invalid 'PUUIDv3' arguments: Provide 'namespace'/'name' or only 'uuid'!"
@@ -180,6 +190,10 @@ class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
 class PUUIDv4[TPrefix: str](PUUID[TPrefix]):
 
     def __init__(self, uuid: UUID | None = None) -> None:
+        if uuid is not None and uuid.version != 4:
+            raise PUUIDError(
+                _ERROR_UUID_VERSION_MISMATCH.format(expected=4, actual=uuid.version)
+            )
         self._uuid = uuid if uuid else uuid4()
         self._serial = f"{self._prefix}_{self._uuid}"
 
@@ -212,8 +226,12 @@ class PUUIDv5[TPrefix: str](PUUID[TPrefix]):
         match namespace, name, uuid:
             case UUID(), str() | bytes(), None:
                 self._uuid = uuid5(namespace, name)
-            case None, None, UUID():
+            case None, None, UUID(version=5):
                 self._uuid = uuid
+            case None, None, UUID(version=version):
+                raise PUUIDError(
+                    _ERROR_UUID_VERSION_MISMATCH.format(expected=5, actual=version)
+                )
             case _:
                 raise PUUIDError(
                     "Invalid 'PUUIDv5' arguments: Provide 'namespace'/'name' or only 'uuid'!"
