@@ -26,3 +26,25 @@ dev = [
     "sqlalchemy[mypy]>=2.0.45",
 ]
 sqlalchemy = ["sqlalchemy>=2.0.45"]
+
+[tool.black]
+target-version = ['py314']
+
+[tool.isort]
+py_version = 314
+profile = "black"
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+
+[tool.coverage.run]
+branch = true
+source = ["src/puuid"]
+
+[tool.coverage.report]
+show_missing = true
