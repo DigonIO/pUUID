@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from puuid import PUUIDv4, PUUIDError, PUUIDv5, PUUIDv1
+from puuid import PUUIDError, PUUIDv1, PUUIDv4, PUUIDv5
 
 
 class ItemUUID(PUUIDv1[Literal["item"]]):
