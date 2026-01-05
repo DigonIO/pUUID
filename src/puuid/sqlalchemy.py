@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy.types import String, TypeDecorator
 
 from puuid import PUUID
@@ -10,19 +12,19 @@ class SqlPUUID(TypeDecorator):
     impl = String
     cache_ok = True
 
-    def __init__(self, puuid_cls: type["PUUID"], prefix_length: int = 4):
+    def __init__(self, puuid_cls: type[PUUID[str]], prefix_length: int = 4):
         self.puuid_cls = puuid_cls
         varchar_length = prefix_length + _SEPARATOR_LENGHT + _UUID_LENGTH
         super().__init__(length=varchar_length)
 
     # NOTE: Python => SQLAlchemy
-    def process_bind_param(self, value, dialect):
+    def process_bind_param(self, value: PUUID[str] | None, dialect: Any) -> str | None:
         if value is None:
             return None
         return value.to_string()
 
     # NOTE: SQLAlchemy => Python
-    def process_result_value(self, value: str | None, dialect):
+    def process_result_value(self, value: str | None, dialect: Any) -> PUUID[str] | None:
         if value is None:
             return None
         return self.puuid_cls.from_string(value)
