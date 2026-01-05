@@ -1,11 +1,24 @@
-from typing import Self, overload, override
+from typing import Self, overload, override, final
 from uuid import UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
 
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 from abc import ABC, abstractmethod
 
-_ERROR_UUID_VERSION_MISMATCH = "Expected 'UUID' with version '{expected}', got {actual}"
+
+@final
+class ERR_MSG:
+    UUID_VERSION_MISMATCH = "Expected 'UUID' with version '{expected}', got '{actual}'"
+    FACTORY_UNSUPPORTED = "'PUUID.factory' is only supported for 'PUUIDv1', 'PUUIDv4', 'PUUIDv6', 'PUUIDv7' and 'PUUIDv8'!"
+    PREFIX_DESERIALIZATION_ERROR = "Unable to deserialize prefix '{prefix}', separator '_' or UUID for '{classname}' from '{serial_puuid}'!"
+    INVALID_TYPE_FOR_SERIAL_PUUID = "'{classname}' can not be created from invalid type '{type}' with value '{value}'!"
+    INVALID_PUUIDv1_ARGS = "Invalid 'PUUIDv1' arguments: Provide either 'node' and 'clock_seq' or a 'uuid'!"
+    INVALID_PUUIDv3_ARGS = "Invalid 'PUUIDv3' arguments: Provide either 'namespace' and 'name' or a 'uuid'!"
+    INVALID_PUUIDv5_ARGS = "Invalid 'PUUIDv5' arguments: Provide either 'namespace' and 'name' or a 'uuid'!"
+    INVALID_PUUIDv6_ARGS = "Invalid 'PUUIDv6' arguments: Provide either 'node' and 'clock_seq' or a 'uuid'!"
+    INVALID_PUUIDv8_ARGS = (
+        "Invalid 'PUUIDv8' arguments: Provide either 'a', 'b' and 'c' or 'uuid'!"
+    )
 
 
 class PUUIDError(Exception):
@@ -42,7 +55,7 @@ class PUUID[TPrefix: str](ABC):
 
     @classmethod
     def factory(cls) -> Self:
-        raise PUUIDError("PUUID.factory is only supported for 'PUUIDv1', 'PUUIDv4', 'PUUIDv6', 'PUUIDv7' and 'PUUIDv8'!")
+        raise PUUIDError(ERR_MSG.FACTORY_UNSUPPORTED)
 
     @classmethod
     def from_string(cls, serial_puuid: str) -> Self:
@@ -56,7 +69,11 @@ class PUUID[TPrefix: str](ABC):
 
         except ValueError as err:
             raise PUUIDError(
-                f"Unable to deserialize prefix '{cls._prefix}', separator '_' or UUID for '{cls.__name__}' from '{serial_puuid}'!"
+                ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
+                    prefix=cls._prefix,
+                    classname=cls.__name__,
+                    serial_puuid=serial_puuid,
+                )
             ) from err
 
     @override
@@ -91,9 +108,10 @@ class PUUID[TPrefix: str](ABC):
                     raise ValueError(str(err)) from err
 
             raise ValueError(
-                f"'{cls.__name__}' can not be created from invalid type '{type(value)}' with value '{value}'!"
+                ERR_MSG.INVALID_TYPE_FOR_SERIAL_PUUID.format(
+                    classname=cls.__name__, type=type(value), value=value
+                )
             )
-
 
         def serialize(value: PUUID[TPrefix]) -> str:
             return value.to_string()
@@ -115,7 +133,6 @@ class PUUID[TPrefix: str](ABC):
 class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
     _uuid: UUID
     _serial: str
-
 
     @overload
     def __init__(
@@ -139,12 +156,10 @@ class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
                 self._uuid = uuid
             case None, None, UUID(version=version):
                 raise PUUIDError(
-                    _ERROR_UUID_VERSION_MISMATCH.format(expected=1, actual=version)
+                    ERR_MSG.UUID_VERSION_MISMATCH.format(expected=1, actual=version)
                 )
             case _:
-                raise PUUIDError(
-                    "Invalid 'PUUIDv1' arguments: Provide 'node'/'clock_seq' or only 'uuid'!"
-                )
+                raise PUUIDError(ERR_MSG.INVALID_PUUIDv1_ARGS)
 
         self._serial = f"{self._prefix}_{self._uuid}"
 
@@ -162,7 +177,6 @@ class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
 class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
     _uuid: UUID
     _serial: str
-
 
     @overload
     def __init__(self, *, namespace: UUID, name: str | bytes) -> None: ...
@@ -185,12 +199,10 @@ class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
                 self._uuid = uuid
             case None, None, UUID(version=version):
                 raise PUUIDError(
-                    _ERROR_UUID_VERSION_MISMATCH.format(expected=3, actual=version)
+                    ERR_MSG.UUID_VERSION_MISMATCH.format(expected=3, actual=version)
                 )
             case _:
-                raise PUUIDError(
-                    "Invalid 'PUUIDv3' arguments: Provide 'namespace'/'name' or only 'uuid'!"
-                )
+                raise PUUIDError(ERR_MSG.INVALID_PUUIDv3_ARGS)
 
         self._serial = f"{self._prefix}_{self._uuid}"
 
@@ -207,7 +219,7 @@ class PUUIDv4[TPrefix: str](PUUID[TPrefix]):
     def __init__(self, uuid: UUID | None = None) -> None:
         if uuid is not None and uuid.version != 4:
             raise PUUIDError(
-                _ERROR_UUID_VERSION_MISMATCH.format(expected=4, actual=uuid.version)
+                ERR_MSG.UUID_VERSION_MISMATCH.format(expected=4, actual=uuid.version)
             )
         self._uuid = uuid if uuid else uuid4()
         self._serial = f"{self._prefix}_{self._uuid}"
@@ -248,12 +260,10 @@ class PUUIDv5[TPrefix: str](PUUID[TPrefix]):
                 self._uuid = uuid
             case None, None, UUID(version=version):
                 raise PUUIDError(
-                    _ERROR_UUID_VERSION_MISMATCH.format(expected=5, actual=version)
+                    ERR_MSG.UUID_VERSION_MISMATCH.format(expected=5, actual=version)
                 )
             case _:
-                raise PUUIDError(
-                    "Invalid 'PUUIDv5' arguments: Provide 'namespace'/'name' or only 'uuid'!"
-                )
+                raise PUUIDError(ERR_MSG.INVALID_PUUIDv5_ARGS)
 
         self._serial = f"{self._prefix}_{self._uuid}"
 
@@ -290,12 +300,10 @@ class PUUIDv6[TPrefix: str](PUUID[TPrefix]):
                 self._uuid = uuid
             case None, None, UUID(version=version):
                 raise PUUIDError(
-                    _ERROR_UUID_VERSION_MISMATCH.format(expected=6, actual=version)
+                    ERR_MSG.UUID_VERSION_MISMATCH.format(expected=6, actual=version)
                 )
             case _:
-                raise PUUIDError(
-                    "Invalid 'PUUIDv6' arguments: Provide 'node'/'clock_seq' or only 'uuid'!"
-                )
+                raise PUUIDError(ERR_MSG.INVALID_PUUIDv6_ARGS)
 
         self._serial = f"{self._prefix}_{self._uuid}"
 
@@ -314,11 +322,10 @@ class PUUIDv7[TPrefix: str](PUUID[TPrefix]):
     _uuid: UUID
     _serial: str
 
-
     def __init__(self, uuid: UUID | None = None) -> None:
         if uuid is not None and uuid.version != 7:
             raise PUUIDError(
-                _ERROR_UUID_VERSION_MISMATCH.format(expected=7, actual=uuid.version)
+                ERR_MSG.UUID_VERSION_MISMATCH.format(expected=7, actual=uuid.version)
             )
         self._uuid = uuid if uuid else uuid7()
         self._serial = f"{self._prefix}_{self._uuid}"
@@ -361,12 +368,10 @@ class PUUIDv8[TPrefix: str](PUUID[TPrefix]):
                 self._uuid = uuid
             case None, None, None, UUID(version=version):
                 raise PUUIDError(
-                    _ERROR_UUID_VERSION_MISMATCH.format(expected=8, actual=version)
+                    ERR_MSG.UUID_VERSION_MISMATCH.format(expected=8, actual=version)
                 )
             case _:
-                raise PUUIDError(
-                    "Invalid 'PUUIDv8' arguments: Provide 'a'/'b'/'c' or only 'uuid'!"
-                )
+                raise PUUIDError(ERR_MSG.INVALID_PUUIDv8_ARGS)
 
         self._serial = f"{self._prefix}_{self._uuid}"
 
