@@ -3,10 +3,17 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from puuid import PUUID, PUUIDError
+from puuid import PUUIDv4, PUUIDError, PUUIDv5, PUUIDv1
 
 
-class UserUUID(PUUID[Literal["user"]]):
+class ItemUUID(PUUIDv1[Literal["item"]]):
+    _prefix = "item"
+
+
+ItemUUID()
+
+
+class UserUUID(PUUIDv4[Literal["user"]]):
     _prefix = "user"
 
 
@@ -18,7 +25,7 @@ def test_create_random() -> None:
 def test_create_with_UUID() -> None:
 
     known_uuid = uuid4()
-    user_id = UserUUID(value=known_uuid)
+    user_id = UserUUID(uuid=known_uuid)
     assert isinstance(user_id, UserUUID)
 
     serial_user_id = f"user_{known_uuid}"
@@ -72,7 +79,7 @@ def test_equal() -> None:
 def test_util_functions() -> None:
     uuid_instance = uuid4()
 
-    user_id = UserUUID(value=uuid_instance)
+    user_id = UserUUID(uuid=uuid_instance)
     assert user_id.prefix() == "user"
     assert user_id.uuid == uuid_instance
     assert isinstance(hash(user_id), int)

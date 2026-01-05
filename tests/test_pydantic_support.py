@@ -3,10 +3,10 @@ from typing import Literal
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from puuid import PUUID
+from puuid import PUUIDv4
 
 
-class UserUUID(PUUID[Literal["user"]]):
+class UserUUID(PUUIDv4[Literal["user"]]):
     _prefix = "user"
 
 

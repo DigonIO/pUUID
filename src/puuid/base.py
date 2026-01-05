@@ -1,5 +1,5 @@
-from typing import Any, Self
-from uuid import UUID, uuid4
+from typing import Any, Self, overload
+from uuid import UUID, uuid1, uuid3, uuid4, uuid5
 
 from pydantic_core import core_schema
 
@@ -11,13 +11,18 @@ class PUUIDError(Exception):
         self.message = message
 
 
+################################################################################
+#### PUUID
+################################################################################
+
+
 class PUUID[TPrefix: str]:
     _prefix: TPrefix
     _serial: str
+    _uuid: UUID
 
-    def __init__(self, value: UUID | None = None) -> None:
-        self._uuid = value or uuid4()
-        self._serial = f"{self._prefix}_{self._uuid}"
+    def __init__(self, *, uuid: UUID | None) -> None:
+        raise PUUIDError("Can not instantiate abstract class 'PUUID'!")
 
     @classmethod
     def prefix(cls) -> TPrefix:
@@ -31,25 +36,24 @@ class PUUID[TPrefix: str]:
         return self._serial
 
     @classmethod
+    def factory(cls) -> Self:
+        raise PUUIDError("The factory is only available for 'PUUIDv1' and 'PUUIDv4'!")
+
+    @classmethod
     def from_string(cls, serial_puuid: str) -> Self:
 
         try:
             prefix, serialized_uuid = serial_puuid.split("_", 1)
-            deserialized_uuid = UUID(serialized_uuid)
-
             if prefix != cls._prefix:
                 raise ValueError
 
-            return cls(deserialized_uuid)
+            uuid = UUID(serialized_uuid)
+            return cls(uuid=uuid)
 
         except ValueError:
             raise PUUIDError(
                 f"Unable to deserialize prefix '{cls._prefix}', separator '_' or UUID for '{cls.__name__}' from '{serial_puuid}'!"
             )
-
-    @classmethod
-    def factory(cls) -> Self:
-        return cls()
 
     def __str__(self) -> str:
         return self._serial
@@ -93,3 +97,126 @@ class PUUID[TPrefix: str]:
                 return_schema=core_schema.str_schema(),
             ),
         )
+
+
+################################################################################
+#### PUUIDv1
+################################################################################
+
+
+class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
+
+    @overload
+    def __init__(
+        self, *, node: int | None = None, clock_seq: int | None = None
+    ) -> None: ...
+
+    @overload
+    def __init__(self, *, uuid: UUID | None) -> None: ...
+
+    def __init__(
+        self,
+        node: int | None = None,
+        clock_seq: int | None = None,
+        uuid: UUID | None = None,
+    ) -> None:
+
+        match node, clock_seq, uuid:
+            case int() | None, int() | None, None:
+                self._uuid = uuid1(node, clock_seq)
+            case None, None, UUID():
+                self._uuid = uuid
+            case _:
+                raise PUUIDError(
+                    "Invalid 'PUUIDv1' arguments: Provide 'node'/'clock_seq' or only 'uuid'!"
+                )
+
+        self._serial = f"{self._prefix}_{self._uuid}"
+
+    @classmethod
+    def factory(cls) -> Self:
+        return cls()
+
+
+################################################################################
+#### PUUIDv3
+################################################################################
+
+
+class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
+
+    @overload
+    def __init__(self, *, namespace: UUID, name: str | bytes) -> None: ...
+
+    @overload
+    def __init__(self, *, uuid: UUID) -> None: ...
+
+    def __init__(
+        self,
+        *,
+        namespace: UUID | None = None,
+        name: str | bytes | None = None,
+        uuid: UUID | None = None,
+    ) -> None:
+
+        match namespace, name, uuid:
+            case UUID(), str() | bytes(), None:
+                self._uuid = uuid3(namespace, name)
+            case None, None, UUID():
+                self._uuid = uuid
+            case _:
+                raise PUUIDError(
+                    "Invalid 'PUUIDv3' arguments: Provide 'namespace'/'name' or only 'uuid'!"
+                )
+
+        self._serial = f"{self._prefix}_{self._uuid}"
+
+
+################################################################################
+#### PUUIDv4
+################################################################################
+
+
+class PUUIDv4[TPrefix: str](PUUID[TPrefix]):
+
+    def __init__(self, uuid: UUID | None = None) -> None:
+        self._uuid = uuid if uuid else uuid4()
+        self._serial = f"{self._prefix}_{self._uuid}"
+
+    @classmethod
+    def factory(cls) -> Self:
+        return cls()
+
+
+################################################################################
+#### PUUIDv5
+################################################################################
+
+
+class PUUIDv5[TPrefix: str](PUUID[TPrefix]):
+
+    @overload
+    def __init__(self, *, namespace: UUID, name: str | bytes) -> None: ...
+
+    @overload
+    def __init__(self, *, uuid: UUID) -> None: ...
+
+    def __init__(
+        self,
+        *,
+        namespace: UUID | None = None,
+        name: str | bytes | None = None,
+        uuid: UUID | None = None,
+    ) -> None:
+
+        match namespace, name, uuid:
+            case UUID(), str() | bytes(), None:
+                self._uuid = uuid5(namespace, name)
+            case None, None, UUID():
+                self._uuid = uuid
+            case _:
+                raise PUUIDError(
+                    "Invalid 'PUUIDv5' arguments: Provide 'namespace'/'name' or only 'uuid'!"
+                )
+
+        self._serial = f"{self._prefix}_{self._uuid}"

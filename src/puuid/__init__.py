@@ -8,9 +8,13 @@ __version__ = "1.0.0"
 __author__ = "Jendrik Potyka, Fabian Preiss"
 
 
-from puuid.base import PUUID, PUUIDError
+from puuid.base import PUUID, PUUIDv1, PUUIDv3, PUUIDv4, PUUIDv5, PUUIDError
 
 __all__ = [
     "PUUID",
+    "PUUIDv1",
+    "PUUIDv3",
+    "PUUIDv4",
+    "PUUIDv5",
     "PUUIDError",
 ]

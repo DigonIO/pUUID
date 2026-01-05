@@ -11,7 +11,7 @@ from sqlalchemy.pool.base import (
     _ConnectionRecord,  # pyright: ignore[reportPrivateUsage]
 )
 
-from puuid import PUUID
+from puuid import PUUIDv4
 from puuid.sqlalchemy import SqlPUUID
 
 ################################################################################
@@ -22,7 +22,7 @@ from puuid.sqlalchemy import SqlPUUID
 class BaseORM(DeclarativeBase): ...
 
 
-class UserUUID(PUUID[Literal["user"]]):
+class UserUUID(PUUIDv4[Literal["user"]]):
     _prefix = "user"
 
 
@@ -34,7 +34,7 @@ class UserORM(BaseORM):
     )
 
 
-class AddressUUID(PUUID[Literal["address"]]):
+class AddressUUID(PUUIDv4[Literal["address"]]):
     _prefix = "address"
 
 
