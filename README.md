@@ -18,7 +18,7 @@
 ## Features
 
 - Prefixed UUID's for Python
-  - Versions: 1, 3, 4, 5, 6, 7
+  - Versions: 1, 3, 4, 5, 6, 7, 8
 - Variable prefix length
 - Supports **Pydantic**
 - Supports **SQLAlchemy**

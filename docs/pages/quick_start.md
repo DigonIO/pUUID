@@ -44,6 +44,44 @@ serial: str = user_id.to_string()
 user_id: UserUUID = UserUUID.from_string(serial)
 ```
 
+## Supported Variants
+
+pUUID supports UUID versions 1, 3, 4, 5, 6, 7, and 8.
+
+```{.python continuation}
+from uuid import NAMESPACE_DNS
+from puuid import PUUIDv5, PUUIDv7, PUUIDv8
+
+
+# Time-based (ordered) UUIDs
+class EventUUID(PUUIDv7[Literal["evt"]]):
+    _prefix = "evt"
+
+
+print(EventUUID())
+# evt_019b956e-ed25-70db-9d0a-0f30fb9047c2
+
+
+# Name-based UUIDs
+class DomainUUID(PUUIDv5[Literal["dom"]]):
+    _prefix = "dom"
+
+
+dom_id = DomainUUID(namespace=NAMESPACE_DNS, name="digon.io")
+print(dom_id)
+# dom_cfbff0d1-9375-5685-968c-48ce8b15ae17
+
+
+# Custom UUIDs
+class ChecksumUUID(PUUIDv8[Literal["chk"]]):
+    _prefix = "chk"
+
+
+chk_id = ChecksumUUID(a=0x123, b=0x456, c=0x789)
+print(chk_id)
+# chk_00000000-0123-8456-8000-000000000789
+```
+
 ## Pydantic Integration
 
 PUUIDs work as field types in Pydantic models with built-in validation.
