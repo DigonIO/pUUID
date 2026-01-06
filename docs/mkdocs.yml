@@ -38,6 +38,7 @@ plugins:
 
 nav:
   - README: index.md
+  - Quick Start: quick_start.md
   - API Reference: api_ref.md
   - Changelog: changelog.md
   - Coverage Report: coverage.md

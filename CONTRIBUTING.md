@@ -17,6 +17,8 @@ uv run black ./src ./tests
 
 ## Testing
 
+Both implementation and documentation are tested with pytest and test passage is enforced in the ci. Validate that your code does not introduce regressions by running the test suite locally.
+
 ### Standard tests
 
 ```bash

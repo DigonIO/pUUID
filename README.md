@@ -18,7 +18,7 @@
 ## Features
 
 - Prefixed UUID's for Python
-  - Versions: 1, 3, 4, 5
+  - Versions: 1, 3, 4, 5, 6, 7
 - Variable prefix length
 - Supports **Pydantic**
 - Supports **SQLAlchemy**
@@ -53,67 +53,14 @@ It’s especially useful when:
 
 The **pUUID** library can be installed directly from the PyPI repositories with:
 
-```console
+```bash
 pip install pUUID
 ```
 
 If you want to use the **SQLAlchemy** feature, you need to install the `sqlalchemy` dependency group:
 
-```console
+```bash
 pip install 'pUUID[sqlalchemy]'
-```
-
-## Basic Usage
-
-```py
-from typing import Literal
-from uuid import UUID
-from puuid import PUUIDv4
-
-
-class UserUUID(PUUIDv4[Literal["user"]]):
-    _prefix = "user"
-
-# Create a random PUUID
-user_id = UserUUID()
-
-# Create a PUUID with a specific UUID
-user_id = UserUUID(UUID('b100f10f-6876-4b61-984f-2c74be42fcd4'))
-
-# Serialize a PUUID:
-serial_puuid = user_id.to_string()
-
-# Deserialize a PUUID
-user_id = UserUUID.from_string(serial_puuid)
-```
-
-## Pydantic Usage
-
-```py
-from pydantic import BaseModel
-
-class User(BaseModel):
-    user_id: UserUUID
-
-user = User(user_id=UserUUID())
-```
-
-## SQLALchemy Usage
-
-```py
-from sqlalchemy.orm import DeclarativeBase
-from puuid.sqlalchemy import SqlPUUID
-
-class BaseORM(DeclarativeBase): ...
-
-class UserORM(BaseORM):
-    __tablename__ = "user_table"
-
-    id: Mapped[UserUUID] = mapped_column(
-        SqlPUUID(UserUUID, prefix_length=4),
-        primary_key=True,
-        default=UserUUID.factory,
-    )
 ```
 
 ## Sponsor

@@ -3,7 +3,7 @@ from mkdocs.structure.pages import Page
 from mkdocs.structure.files import Files
 
 DESCRIPTIONS: dict[str, str] = {
-    "index.md": "Prefixed UUID's for Python with Pydantic & SQLAlchemy support.",
+    "index.md": "Prefixed UUIDs for Python with Pydantic & SQLAlchemy support.",
 }
 
 
