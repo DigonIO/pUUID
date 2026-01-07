@@ -77,27 +77,27 @@ pytest_3_14:
     paths:
       - .coverage
 
-# pydoctest_3_14:
-#   stage: test
-#   image: $IMG_PYTHON_UV_3_14
-#   script:
-#     - uv sync --all-groups
-#     - uv run pytest --markdown-docs --markdown-docs-syntax=superfences docs/docs
+pydoctest_3_14:
+  stage: test
+  image: $IMG_PYTHON_UV_3_14
+  script:
+    - uv sync --all-groups
+    - uv run pytest --markdown-docs --markdown-docs-syntax=superfences docs/docs
 
 ####################################################################################################
 ### Documentation Stage
 ####################################################################################################
 
-# doc_site:
-#   stage: build_1
-#   image: $IMG_PYTHON_UV_3_14
-#   script:
-#     - uv sync --all-groups
-#     - uv run coverage html
-#     - uv run mkdocs build -f docs/mkdocs.yml
-#   artifacts:
-#     paths:
-#       - docs/site
+doc_site:
+  stage: build_1
+  image: $IMG_PYTHON_UV_3_14
+  script:
+    - uv sync --all-groups
+    - uv run coverage html
+    - uv run mkdocs build -f docs/mkdocs.yml
+  artifacts:
+    paths:
+      - docs/site
 
 pkg_build:
   stage: build_1
@@ -112,48 +112,48 @@ pkg_build:
 #### Stage - build
 ####################################################################################################
 
-# doc_image:
-#   stage: build_2
-#   image:
-#     name: $IMG_KANIKO
-#     entrypoint: [""]
-#   script:
-#     - >
-#       /kaniko/executor --context ./docs --destination "${IMG_DOC}" --tarPath app_image.tar
-#       --no-push --force
-#   artifacts:
-#     paths:
-#       - app_image.tar
+doc_image:
+  stage: build_2
+  image:
+    name: $IMG_KANIKO
+    entrypoint: [""]
+  script:
+    - >
+      /kaniko/executor --context ./docs --destination "${IMG_DOC}" --tarPath app_image.tar
+      --no-push --force
+  artifacts:
+    paths:
+      - app_image.tar
 
 ####################################################################################################
 #### Stage - upload
 ####################################################################################################
 
-# doc_upload:
-#   stage: upload
-#   image:
-#     name: ${IMG_CRANE}
-#     entrypoint: [""]
-#   script:
-#     - crane auth login -u "${CONTAINER_REGISTRY_USER}" -p "${CONTAINER_REGISTRY_PW}" "${CONTAINER_REGISTRY_URL}"
-#     - crane push app_image.tar ${IMG_DOC}
-#   rules:
-#     - if: $CI_COMMIT_REF_NAME == "main"
+doc_upload:
+  stage: upload
+  image:
+    name: ${IMG_CRANE}
+    entrypoint: [""]
+  script:
+    - crane auth login -u "${CONTAINER_REGISTRY_USER}" -p "${CONTAINER_REGISTRY_PW}" "${CONTAINER_REGISTRY_URL}"
+    - crane push app_image.tar ${IMG_DOC}
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
 
 ####################################################################################################
 ### Release Stage
 ####################################################################################################
 
-# doc_release:
-#   stage: release
-#   image:
-#     name: ${IMG_KUBECTL}
-#     entrypoint: [""]
-#   script:
-#     - source ci/setup_kubectl.sh
-#     - envsubst < docs/k8s.yaml | kubectl apply -f -
-#   rules:
-#     - if: $CI_COMMIT_REF_NAME == "main"
+doc_release:
+  stage: release
+  image:
+    name: ${IMG_KUBECTL}
+    entrypoint: [""]
+  script:
+    - source ci/setup_kubectl.sh
+    - envsubst < docs/k8s.yaml | kubectl apply -f -
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
 
 pkg_release:
   stage: release
