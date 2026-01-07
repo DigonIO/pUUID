@@ -1,4 +1,4 @@
-# pUUID
+![Logo: pUUID - Prefixed UUIDs for Python](https://gitlab.com/DigonIO/puuid/-/raw/main/assets/logo_font_path.svg "pUUID Logo")
 
 **pUUID** - Prefixed UUIDs for Python with **Pydantic** & **SQLAlchemy** support.
 
@@ -15,9 +15,17 @@
 [![Downloads Week](https://pepy.tech/badge/puuid/week)](https://pepy.tech/project/puuid)
 [![Downloads Total](https://pepy.tech/badge/puuid)](https://pepy.tech/project/puuid)
 
+---
+
+If you find the **pUUID** library beneficial, please consider supporting the project by [starring it on GitHub](https://github.com/DigonIO/pUUID).
+
+[![GitHub Repo stars](https://img.shields.io/github/stars/digonio/puuid)](https://github.com/DigonIO/pUUID)
+
+# pUUID - Prefixed UUIDs for Python
+
 ## Features
 
-- **Human-Friendly UUIDs:** `user_019b956e...` instead of just  `019b956e...`
+- **Human-Friendly UUIDs:** `user_019b956e...` instead of just `019b956e...`
 - **All UUID versions from [RFC 9562](https://www.rfc-editor.org/rfc/rfc95629).**
 - **Pydantic support.** [(Read more)](https://puuid.digon.io/quick_start/#pydantic-integration)
 - **SQLAlchemy support.** [(Read more)](https://puuid.digon.io/quick_start/#sqlalchemy-integration)
@@ -59,13 +67,20 @@ uid = UserUUID.from_string("user_019b956e-ed25-70db-9d0a-0f30fb9047c2")
 - [Coverage Report](https://puuid.digon.io/changelog)
 - [How to contribute](https://gitlab.com/DigonIO/puuid/-/blob/main/CONTRIBUTING.md)
 
+## Alternatives
+
+If you only need lexicographically sortable IDs and want to build the **SQLAlchemy** support yourself, these two projects might be for you:
+
+- [**TypeID**](https://github.com/akhundMurad/typeid-python) - **pUUID** supports all **UUID** versions because it uses Python’s standard `uuid` library for **UUID** generation, while **TypeID** uses a custom generator that comes with performance improvements but only supports **UUIDv7**. **TypeID** does not support **SQLAlchemy** out of the box.
+- [**UPID**](https://github.com/carderne/upid) - **UPID** implements a modified version of the **ULID** standard, which was designed before **UUIDv7** was available. **UPID** does not support **SQLAlchemy** out of the box.
+
 ## Sponsor
 
 ![Digon.IO GmbH Logo](https://gitlab.com/DigonIO/puuid/-/raw/main/assets/logo_digon.io_gmbh.png "Digon.IO GmbH")
 
 Digon.IO provides dev & data end-to-end consulting for SMEs and software companies. [(Website)](https://digon.io) [(Technical Blog)](https://digon.io/en/blog)
 
-_The sponsor logo is the property of Digon.IO GmbH. Standard trademark and copyright restrictions apply to any use outside this repository._
+*The sponsor logo is the property of Digon.IO GmbH. Standard trademark and copyright restrictions apply to any use outside this repository.*
 
 ## License
 
