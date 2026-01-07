@@ -28,6 +28,8 @@ class ERR_MSG:
 
 
 class PUUIDError(Exception):
+    """Base exception for pUUID related errors."""
+
     message: str
 
     def __init__(self, message: str = "") -> None:
@@ -41,6 +43,8 @@ class PUUIDError(Exception):
 
 
 class PUUID[TPrefix: str](ABC):
+    """Abstract Base Class for Prefixed UUIDs."""
+
     _prefix: TPrefix
     _serial: str
     _uuid: UUID
@@ -50,21 +54,78 @@ class PUUID[TPrefix: str](ABC):
 
     @classmethod
     def prefix(cls) -> TPrefix:
+        """
+        Return the defined prefix for the class.
+
+        Returns
+        -------
+        TPrefix
+            The prefix string.
+        """
         return cls._prefix
 
     @property
     def uuid(self) -> UUID:
+        """
+        Return the underlying UUID object.
+
+        Returns
+        -------
+        UUID
+            The native UUID instance.
+        """
         return self._uuid
 
     def to_string(self) -> str:
+        """
+        Return the string representation of the Prefixed UUID.
+
+        Returns
+        -------
+        str
+            The formatted string (e.g., `<prefix>_<uuid-hex-string>`).
+        """
         return self._serial
 
     @classmethod
     def factory(cls) -> Self:
+        """
+        Create a new instance using default generation.
+
+        Supported by version variants that allow generation without arguments.
+
+        Returns
+        -------
+        Self
+            A new instance of the pUUID class.
+
+        Raises
+        ------
+        PUUIDError
+            If the variant does not support parameterless generation.
+        """
         raise PUUIDError(ERR_MSG.FACTORY_UNSUPPORTED)
 
     @classmethod
     def from_string(cls, serial_puuid: str) -> Self:
+        """
+        Create a pUUID instance from its string representation.
+
+        Parameters
+        ----------
+        serial_puuid : str
+            The prefixed UUID string (e.g., `user_550e8400-e29b...`).
+
+        Returns
+        -------
+        Self
+            The deserialized pUUID instance.
+
+        Raises
+        ------
+        PUUIDError
+            If the string is malformed or the prefix does not match.
+        """
         try:
             if "_" not in serial_puuid:
                 raise ValueError("Missing separator")
@@ -141,6 +202,8 @@ class PUUID[TPrefix: str](ABC):
 
 
 class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
+    """Prefixed UUID Version 1 (MAC address and time)."""
+
     _uuid: UUID
     _serial: str
 
@@ -159,6 +222,23 @@ class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
         clock_seq: int | None = None,
         uuid: UUID | None = None,
     ) -> None:
+        """
+        Initialize a PUUIDv1.
+
+        Parameters
+        ----------
+        node : int | None, optional
+            Hardware address. If None, `uuid1` generates a random value.
+        clock_seq : int | None, optional
+            Clock sequence.
+        uuid : UUID | None, optional
+            Existing UUID v1 instance.
+
+        Raises
+        ------
+        PUUIDError
+            If arguments are inconsistent or the UUID version is incorrect.
+        """
         match node, clock_seq, uuid:
             case int() | None, int() | None, None:
                 self._uuid = uuid1(node, clock_seq)
@@ -176,6 +256,14 @@ class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
     @override
     @classmethod
     def factory(cls) -> Self:
+        """
+        Create a new PUUIDv1 instance using current time and MAC address.
+
+        Returns
+        -------
+        Self
+            A new pUUID v1 instance.
+        """
         return cls()
 
 
@@ -185,6 +273,8 @@ class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
 
 
 class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
+    """Prefixed UUID Version 3 (MD5 hash of namespace and name)."""
+
     _uuid: UUID
     _serial: str
 
@@ -201,7 +291,23 @@ class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
         name: str | bytes | None = None,
         uuid: UUID | None = None,
     ) -> None:
+        """
+        Initialize a PUUIDv3.
 
+        Parameters
+        ----------
+        namespace : UUID | None, optional
+            Namespace UUID.
+        name : str | bytes | None, optional
+            The name used for hashing.
+        uuid : UUID | None, optional
+            Existing UUID v3 instance.
+
+        Raises
+        ------
+        PUUIDError
+            If arguments are inconsistent or the UUID version is incorrect.
+        """
         match namespace, name, uuid:
             case UUID(), str() | bytes(), None:
                 self._uuid = uuid3(namespace, name)
@@ -223,10 +329,25 @@ class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
 
 
 class PUUIDv4[TPrefix: str](PUUID[TPrefix]):
+    """Prefixed UUID Version 4 (randomly generated)."""
+
     _uuid: UUID
     _serial: str
 
     def __init__(self, uuid: UUID | None = None) -> None:
+        """
+        Initialize a PUUIDv4.
+
+        Parameters
+        ----------
+        uuid : UUID | None, optional
+            Existing UUID v4 instance. If None, a new random UUID is generated.
+
+        Raises
+        ------
+        PUUIDError
+            If the provided UUID is not version 4.
+        """
         if uuid is not None and uuid.version != 4:
             raise PUUIDError(
                 ERR_MSG.UUID_VERSION_MISMATCH.format(expected=4, actual=uuid.version)
@@ -237,6 +358,14 @@ class PUUIDv4[TPrefix: str](PUUID[TPrefix]):
     @override
     @classmethod
     def factory(cls) -> Self:
+        """
+        Create a new PUUIDv4 instance using random generation.
+
+        Returns
+        -------
+        Self
+            A new pUUID v4 instance.
+        """
         return cls()
 
 
@@ -246,6 +375,8 @@ class PUUIDv4[TPrefix: str](PUUID[TPrefix]):
 
 
 class PUUIDv5[TPrefix: str](PUUID[TPrefix]):
+    """Prefixed UUID Version 5 (SHA-1 hash of namespace and name)."""
+
     _uuid: UUID
     _serial: str
 
@@ -262,7 +393,23 @@ class PUUIDv5[TPrefix: str](PUUID[TPrefix]):
         name: str | bytes | None = None,
         uuid: UUID | None = None,
     ) -> None:
+        """
+        Initialize a PUUIDv5.
 
+        Parameters
+        ----------
+        namespace : UUID | None, optional
+            Namespace UUID.
+        name : str | bytes | None, optional
+            The name used for hashing.
+        uuid : UUID | None, optional
+            Existing UUID v5 instance.
+
+        Raises
+        ------
+        PUUIDError
+            If arguments are inconsistent or the UUID version is incorrect.
+        """
         match namespace, name, uuid:
             case UUID(), str() | bytes(), None:
                 self._uuid = uuid5(namespace, name)
@@ -284,6 +431,8 @@ class PUUIDv5[TPrefix: str](PUUID[TPrefix]):
 
 
 class PUUIDv6[TPrefix: str](PUUID[TPrefix]):
+    """Prefixed UUID Version 6 (reordered v1 for DB locality)."""
+
     _uuid: UUID
     _serial: str
 
@@ -302,7 +451,23 @@ class PUUIDv6[TPrefix: str](PUUID[TPrefix]):
         clock_seq: int | None = None,
         uuid: UUID | None = None,
     ) -> None:
+        """
+        Initialize a PUUIDv6.
 
+        Parameters
+        ----------
+        node : int | None, optional
+            Hardware address.
+        clock_seq : int | None, optional
+            Clock sequence.
+        uuid : UUID | None, optional
+            Existing UUID v6 instance.
+
+        Raises
+        ------
+        PUUIDError
+            If arguments are inconsistent or the UUID version is incorrect.
+        """
         match node, clock_seq, uuid:
             case int() | None, int() | None, None:
                 self._uuid = uuid6(node, clock_seq)
@@ -320,6 +485,14 @@ class PUUIDv6[TPrefix: str](PUUID[TPrefix]):
     @override
     @classmethod
     def factory(cls) -> Self:
+        """
+        Create a new PUUIDv6 instance using reordered time-based generation.
+
+        Returns
+        -------
+        Self
+            A new pUUID v6 instance optimized for DB locality.
+        """
         return cls()
 
 
@@ -329,10 +502,25 @@ class PUUIDv6[TPrefix: str](PUUID[TPrefix]):
 
 
 class PUUIDv7[TPrefix: str](PUUID[TPrefix]):
+    """Prefixed UUID Version 7 (time-ordered)."""
+
     _uuid: UUID
     _serial: str
 
     def __init__(self, uuid: UUID | None = None) -> None:
+        """
+        Initialize a PUUIDv7.
+
+        Parameters
+        ----------
+        uuid : UUID | None, optional
+            Existing UUID v7 instance. If None, a new time-ordered UUID is generated.
+
+        Raises
+        ------
+        PUUIDError
+            If the provided UUID is not version 7.
+        """
         if uuid is not None and uuid.version != 7:
             raise PUUIDError(
                 ERR_MSG.UUID_VERSION_MISMATCH.format(expected=7, actual=uuid.version)
@@ -343,6 +531,14 @@ class PUUIDv7[TPrefix: str](PUUID[TPrefix]):
     @override
     @classmethod
     def factory(cls) -> Self:
+        """
+        Create a new PUUIDv7 instance using time-ordered generation.
+
+        Returns
+        -------
+        Self
+            A new pUUID v7 instance.
+        """
         return cls()
 
 
@@ -352,6 +548,8 @@ class PUUIDv7[TPrefix: str](PUUID[TPrefix]):
 
 
 class PUUIDv8[TPrefix: str](PUUID[TPrefix]):
+    """Prefixed UUID Version 8 (custom implementation)."""
+
     _uuid: UUID
     _serial: str
 
@@ -371,6 +569,25 @@ class PUUIDv8[TPrefix: str](PUUID[TPrefix]):
         c: int | None = None,
         uuid: UUID | None = None,
     ) -> None:
+        """
+        Initialize a PUUIDv8.
+
+        Parameters
+        ----------
+        a : int | None, optional
+            First custom 48-bit value.
+        b : int | None, optional
+            Second custom 12-bit value.
+        c : int | None, optional
+            Third custom 62-bit value.
+        uuid : UUID | None, optional
+            Existing UUID v8 instance.
+
+        Raises
+        ------
+        PUUIDError
+            If arguments are inconsistent or the UUID version is incorrect.
+        """
         match a, b, c, uuid:
             case int() | None, int() | None, int() | None, None:
                 self._uuid = uuid8(a, b, c)
@@ -388,4 +605,12 @@ class PUUIDv8[TPrefix: str](PUUID[TPrefix]):
     @override
     @classmethod
     def factory(cls) -> Self:
+        """
+        Create a new PUUIDv8 instance using custom generation.
+
+        Returns
+        -------
+        Self
+            A new pUUID v8 instance.
+        """
         return cls()

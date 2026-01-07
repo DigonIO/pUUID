@@ -1,5 +1,8 @@
 # pUUID - API Reference
 
+::: puuid.PUUIDError
+    handler: python
+
 ::: puuid.PUUID
     handler: python
 

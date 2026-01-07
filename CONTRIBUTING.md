@@ -65,6 +65,10 @@ uv run basedpyright src
 
 ## Style Guide
 
+### Documentation style
+
+- Docstrings use numpydoc style
+
 ### Type Annotations
 
 - Use Python 3.14 type hints everywhere (including tests).
