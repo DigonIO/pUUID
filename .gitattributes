@@ -1,1 +1,2 @@
 assets/logo_digon.io_gmbh.png filter=lfs diff=lfs merge=lfs -text
+assets/favicon_font.png filter=lfs diff=lfs merge=lfs -text
