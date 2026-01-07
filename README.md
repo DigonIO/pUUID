@@ -26,7 +26,7 @@ If you find the **pUUID** library beneficial, please consider supporting the pro
 ## Features
 
 - **Human-Friendly UUIDs:** `user_019b956e...` instead of just `019b956e...`
-- **All UUID versions from [RFC 9562](https://www.rfc-editor.org/rfc/rfc95629).**
+- **All UUID versions from [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html).**
 - **Pydantic support.** [(Read more)](https://puuid.digon.io/quick_start/#pydantic-integration)
 - **SQLAlchemy support.** [(Read more)](https://puuid.digon.io/quick_start/#sqlalchemy-integration)
 - **Strong type guarantees!**
