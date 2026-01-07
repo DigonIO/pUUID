@@ -10,26 +10,30 @@
 [![Code style: black](https://gitlab.com/DigonIO/puuid/-/raw/main/assets/badges/black.svg)](https://github.com/psf/black)
 [![Imports: isort](https://gitlab.com/DigonIO/puuid/-/raw/main/assets/badges/isort.svg)](https://pycqa.github.io/isort/)
 
-[![pkgversion](https://img.shields.io/pypi/v/puuid)](https://pypi.org/project/puuid/)
-[![versionsupport](https://img.shields.io/pypi/pyversions/puuid)](https://pypi.org/project/puuid/)
+[![pkgversion](https://img.shields.io/pypi/v/pUUID)](https://pypi.org/project/pUUID/)
+[![versionsupport](https://img.shields.io/pypi/pyversions/pUUID)](https://pypi.org/project/pUUID/)
 [![Downloads Week](https://pepy.tech/badge/puuid/week)](https://pepy.tech/project/puuid)
 [![Downloads Total](https://pepy.tech/badge/puuid)](https://pepy.tech/project/puuid)
 
 ---
 
-If you find the **pUUID** library beneficial, please consider supporting the project by [starring it on GitHub](https://github.com/DigonIO/pUUID).
-
-[![GitHub Repo stars](https://img.shields.io/github/stars/digonio/puuid)](https://github.com/DigonIO/pUUID)
-
 # pUUID - Prefixed UUIDs for Python
 
 ## Features
 
-- **Human-Friendly UUIDs:** `user_019b956e...` instead of just `019b956e...`
-- **All UUID versions from [RFC 9562](https://www.rfc-editor.org/rfc/rfc95629).**
+- **Human-Friendly:** `user_550e8400...` instead of just randomness.
+- **Standard Compliant:** Supports all UUID versions from [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html).
 - **Pydantic support.** [(Read more)](https://puuid.digon.io/quick_start/#pydantic-integration)
 - **SQLAlchemy support.** [(Read more)](https://puuid.digon.io/quick_start/#sqlalchemy-integration)
 - **Strong type guarantees!**
+
+## Motivation
+
+Standard UUIDs like `019b9a2e-9856-737c-955e-c4e4523a2176` are great for machines but difficult for humans. **pUUID** implements prefixed identifiers (e.g., `user_019b9a2e...`) to provide:
+
+- **Semantics & Context:** Immediately identify the resource type in logs, URLs, and databases without additional lookups.
+- **Error Prevention:** Strong type guarantees prevent passing a `customer_id` into a `payment_id` field.
+- **Improved UX:** Identifiers are easier to discuss, double-click to select (thanks to the underscore separator), and debug.
 
 ## Installation
 
