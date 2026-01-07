@@ -1,3 +1,9 @@
+"""
+pUUID Base Implementation.
+
+Provides the abstract base class and version-specific implementations for Prefixed UUIDs.
+"""
+
 from abc import ABC, abstractmethod
 from typing import Self, final, overload, override
 from uuid import UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8

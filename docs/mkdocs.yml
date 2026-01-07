@@ -1,7 +1,7 @@
 site_name: pUUID - Prefixed UUID's for Python.
 site_url: https://puuid.digon.io
 repo_url: https://github.com/DigonIO/puuid
-repo_name: DigonIO/github
+repo_name: DigonIO/puuid
 copyright: Copyright © 2026 Jendrik Potyka & Fabian Preiss
 docs_dir: pages
 
@@ -32,6 +32,16 @@ plugins:
             members_order: source
             show_root_heading: true
             show_source: false
+            inherited_members: true
+            show_root_full_path: true
+            show_if_no_docstring: true
+            show_root_toc: true
+            # special_members:
+            #   - __init__
+            filters:
+              - "!^_.*$" # hide all private
+              - "!^__.*__$" # hide all dunder methods
+              - "^__init__$" # but keep the constructor
   - coverage:
       page_path: coverage
       html_report_dir: htmlcov
