@@ -24,7 +24,7 @@ variables:
   # https://github.com/astral-sh/uv/pkgs/container/uv/569901911?tag=0.9.8-python3.14-bookworm
   IMG_PYTHON_UV_3_14: "ghcr.io/astral-sh/uv@sha256:cd33eb64e2c434b4d5cd843192ef55e7d7a21e0dd590586550d1e44eab672456"
 
-  IMG_DOC: ${CONTAINER_REGISTRY_URL}/pypermission-doc:${CI_COMMIT_SHORT_SHA}
+  IMG_DOC: ${CONTAINER_REGISTRY_URL}/puuid-doc:${CI_COMMIT_SHORT_SHA}
 
 ####################################################################################################
 ### Analysis Stage
