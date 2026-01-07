@@ -64,7 +64,7 @@ uid = UserUUID.from_string("user_019b956e-ed25-70db-9d0a-0f30fb9047c2")
 - [Online documentation](https://puuid.digon.io)
 - [API Reference](https://puuid.digon.io/api_ref)
 - [Changelog](https://puuid.digon.io/changelog)
-- [Coverage Report](https://puuid.digon.io/changelog)
+- [Coverage Report](https://puuid.digon.io/coverage)
 - [How to contribute](https://gitlab.com/DigonIO/puuid/-/blob/main/CONTRIBUTING.md)
 
 ## Alternatives
