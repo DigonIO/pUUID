@@ -74,7 +74,7 @@ uv run basedpyright src
 - avoid using `object` for annotations
 - avoid using `cast` for annotations
 - Try to use `StrEnum` or `Literal` types where possible and limit `str` usage if the content can be known in advance.
-- the `__init__` method of a class be annotated with types for all arguments (except `self`) and in addition annotate the return type `None`
+- the `__init__` method of a class should be annotated with types for all arguments (except `self`) and in addition annotate the return type `None`
 - `dict` is a generic type and requires two type arguments. In most cases a `TypedDict` should be preferred over using `dict`. As `dict` itself is type invariant, it should generally be avoided as an input argument for a function - `collections.abc.Mapping` (being covariant) is a much better fit.
 - No need do `from __future__ import annotations`, we are already on the newest stable 3.14 release, to the contrary - using this import will eagerly evaluate type annotations and makes forward references awkward (they'd require strings for the types)
 - Do not use strings for types, they are lazily evaluated in 3.14, which allows us to use the classes directly (even with forward declarations)

@@ -60,9 +60,13 @@ class PUUID[TPrefix: str](ABC):
     @classmethod
     def from_string(cls, serial_puuid: str) -> Self:
         try:
+            if "_" not in serial_puuid:
+                raise ValueError("Missing separator")
+
             prefix, serialized_uuid = serial_puuid.split("_", 1)
+
             if prefix != cls._prefix:
-                raise ValueError
+                raise ValueError("Prefix mismatch")
 
             uuid = UUID(serialized_uuid)
             return cls(uuid=uuid)
