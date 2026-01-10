@@ -461,7 +461,6 @@ def test_create_with_UUID() -> None:
     assert isinstance(user_id, PUUIDv4)
 
     serial_user_id = f"user_{known_uuid}"
-    # breakpoint()
     assert user_id.to_string() == serial_user_id
     assert str(user_id) == serial_user_id
 

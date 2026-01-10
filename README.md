@@ -19,21 +19,15 @@
 
 # pUUID - Prefixed UUIDs for Python
 
+Raw UUIDs like `019b9a2e-9856-...` are annoying to work with. They provide no context in logs, traces or bug reports and offer no safe guards against accidental ID swapping in code. `pUUID` provides prefixed UUIDs for python with minimal overhead and strong type guarantees.
+
 ## Features
 
-- **Human-Friendly:** `user_550e8400...` instead of just randomness.
+- **Human-Friendly:** Immediate context with `user_019b9a2e...` instead of `Error: Could not find entity 019b9a2e-9856-...` thanks to prefixing in logs, URLs, databases and more
+- **Strong type guarantees:** Prevent passing of a `CustomerID` into a `payment_id` field.
 - **Standard Compliant:** Supports all UUID versions from [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html).
 - **Pydantic support.** [(Read more)](https://puuid.digon.io/quick_start/#pydantic-integration)
 - **SQLAlchemy support.** [(Read more)](https://puuid.digon.io/quick_start/#sqlalchemy-integration)
-- **Strong type guarantees!**
-
-## Motivation
-
-Standard UUIDs like `019b9a2e-9856-737c-955e-c4e4523a2176` are great for machines but difficult for humans. **pUUID** implements prefixed identifiers (e.g., `user_019b9a2e...`) to provide:
-
-- **Semantics & Context:** Immediately identify the resource type in logs, URLs, and databases without additional lookups.
-- **Error Prevention:** Strong type guarantees prevent passing a `customer_id` into a `payment_id` field.
-- **Improved UX:** Identifiers are easier to discuss, double-click to select (thanks to the underscore separator), and debug.
 
 ## Installation
 

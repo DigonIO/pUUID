@@ -58,6 +58,13 @@ class PUUIDError(Exception):
 #### utilities
 ################################################################################
 
+type _SubscriptionArgs = tuple[object, ...]
+type _PUUIDClass = type[PUUIDBase[str]]
+type _ClassGetItemReturn = GenericAlias | _PUUIDClass
+
+type _SpecializationCacheKey = tuple[_PUUIDClass, str]
+_SPECIALIZATION_CACHE: dict[_SpecializationCacheKey, _PUUIDClass] = {}
+
 
 def _evaluate_type_alias(value: object) -> object:
     """
@@ -111,6 +118,80 @@ def _try_extract_literal_string(item: object) -> str | None:
     return None
 
 
+@overload
+def _normalize_class_getitem_item(
+    item: tuple[object, ...],
+) -> tuple[_SubscriptionArgs, object]: ...
+@overload
+def _normalize_class_getitem_item(item: object) -> tuple[_SubscriptionArgs, object]: ...
+def _normalize_class_getitem_item(item: object) -> tuple[_SubscriptionArgs, object]:
+    args_tuple: _SubscriptionArgs = item if _is_object_tuple(item) else (item,)
+    normalized = _unwrap_singleton_tuple(item)
+    return args_tuple, normalized
+
+
+def _is_puuid_class(value: type) -> TypeIs[_PUUIDClass]:
+    return issubclass(value, PUUIDBase)
+
+
+def _build_specialized_puuid_class(
+    cls: _PUUIDClass,
+    args_tuple: _SubscriptionArgs,
+    prefix: str,
+) -> _PUUIDClass:
+    new_name = f"{cls.__name__}_{prefix}"
+    new_cls_untyped = type(
+        new_name,
+        (cls,),
+        {
+            "_prefix": prefix,
+            "__doc__": cls.__doc__,
+            "__module__": cls.__module__,
+            "__orig_bases__": (GenericAlias(cls, args_tuple),),
+        },
+    )
+
+    if not _is_puuid_class(new_cls_untyped):
+        raise TypeError(f"Expected a PUUIDBase subclass, got {new_cls_untyped!r}")
+    return new_cls_untyped
+
+
+def _get_or_create_specialization(
+    cls: _PUUIDClass,
+    args_tuple: _SubscriptionArgs,
+    prefix: str,
+) -> _PUUIDClass:
+    key: _SpecializationCacheKey = (cls, prefix)
+
+    cached = _SPECIALIZATION_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    specialized = _build_specialized_puuid_class(cls, args_tuple, prefix)
+    _SPECIALIZATION_CACHE[key] = specialized
+    return specialized
+
+
+def _puuid_class_getitem_runtime(cls: _PUUIDClass, item: object) -> _ClassGetItemReturn:
+    """
+    Runtime specialization hook for `PUUIDBase.__class_getitem__`.
+
+    Returns:
+      - GenericAlias for "normal" runtime generic behavior
+      - Specialized subclass for `Literal["..."]` prefixes (cached)
+    """
+    args_tuple, normalized = _normalize_class_getitem_item(item)
+
+    if _is_deferred_type_arg(normalized):
+        return GenericAlias(cls, args_tuple)
+
+    prefix = _try_extract_literal_string(normalized)
+    if prefix is None:
+        return GenericAlias(cls, args_tuple)
+
+    return _get_or_create_specialization(cls, args_tuple, prefix)
+
+
 ################################################################################
 #### PUUIDBase
 ################################################################################
@@ -126,47 +207,16 @@ class PUUIDBase[TPrefix: str](ABC):
     @abstractmethod
     def __init__(self, *, uuid: UUID) -> None: ...
 
+    # `__class_getitem__` is only implemented for runtime behavior (dynamic specialization
+    # on `Literal["..."]`). Static type checkers already understand `PUUIDBase[T]`
+    # subscription and would either ignore or be confused by a custom implementation here.
+    # Guarding it behind `if not TYPE_CHECKING` keeps the static generic semantics intact
+    # while still enabling the runtime specialization hook.
     if not TYPE_CHECKING:
-        _specialization_cache: dict[tuple[type, str], type] = {}
 
         @classmethod
         def __class_getitem__(cls, item: object) -> object:
-            """
-            Runtime specialization hook.
-
-            - For `Literal["..."]` arguments: create/cache a real subclass and store
-              the extracted prefix on the class (`_prefix`).
-            - For everything else: fall back to normal runtime generic behavior
-              (`GenericAlias`).
-            """
-            args_tuple = item if _is_object_tuple(item) else (item,)
-            normalized = _unwrap_singleton_tuple(item)
-
-            if _is_deferred_type_arg(normalized):
-                return GenericAlias(cls, args_tuple)
-
-            extracted = _try_extract_literal_string(normalized)
-            if extracted is None:
-                return GenericAlias(cls, args_tuple)
-
-            key = (cls, extracted)
-            cached = PUUIDBase._specialization_cache.get(key)
-            if cached is not None:
-                return cached
-
-            new_name = f"{cls.__name__}_{extracted}"
-            new_cls = type(
-                new_name,
-                (cls,),
-                {
-                    "_prefix": extracted,
-                    "__doc__": cls.__doc__,
-                    "__module__": cls.__module__,
-                    "__orig_bases__": (GenericAlias(cls, args_tuple),),
-                },
-            )
-            PUUIDBase._specialization_cache[key] = new_cls
-            return new_cls
+            return _puuid_class_getitem_runtime(cls, item)
 
     @classmethod
     def prefix(cls) -> str:
