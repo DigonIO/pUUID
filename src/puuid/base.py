@@ -225,7 +225,7 @@ class PUUIDBase[TPrefix: str](ABC):
     """Abstract Generic Base Class for Prefixed UUIDs."""
 
     _prefix: ClassVar[str] = ""
-    _serial: str
+    _serial: str | None
     _uuid: UUID
 
     @abstractmethod
@@ -266,6 +266,9 @@ class PUUIDBase[TPrefix: str](ABC):
         """
         return self._uuid
 
+    def _format_serial(self) -> str:
+        return f"{type(self)._prefix}_{self._uuid}"
+
     def to_string(self) -> str:
         """
         Return the string representation of the Prefixed UUID.
@@ -275,7 +278,13 @@ class PUUIDBase[TPrefix: str](ABC):
         str
             The formatted string (e.g., `<prefix>_<uuid-hex-string>`).
         """
-        return self._serial
+        cached = self._serial
+        if cached is not None:
+            return cached
+
+        serial = self._format_serial()
+        self._serial = serial
+        return serial
 
     @classmethod
     def factory(cls) -> Self:
@@ -339,13 +348,14 @@ class PUUIDBase[TPrefix: str](ABC):
 
     @override
     def __str__(self) -> str:
-        return self._serial
+        return self.to_string()
 
     @override
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, PUUIDBase):
-            return self._serial == other._serial
-        return False
+        if not isinstance(other, PUUIDBase):
+            return False
+
+        return (self._prefix, self._uuid) == (other._prefix, other._uuid)
 
     @override
     def __hash__(self) -> int:
@@ -399,7 +409,7 @@ class PUUIDv1[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 1 (MAC address and time)."""
 
     _uuid: UUID
-    _serial: str
+    _serial: str | None
 
     @overload
     def __init__(
@@ -445,7 +455,7 @@ class PUUIDv1[TPrefix: str](PUUIDBase[TPrefix]):
             case _:
                 raise PUUIDError(ERR_MSG.INVALID_PUUIDv1_ARGS)
 
-        self._serial = f"{self._prefix}_{self._uuid}"
+        self._serial = None
 
     @override
     @classmethod
@@ -470,7 +480,7 @@ class PUUIDv3[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 3 (MD5 hash of namespace and name)."""
 
     _uuid: UUID
-    _serial: str
+    _serial: str | None
 
     @overload
     def __init__(self, *, namespace: UUID, name: str | bytes) -> None: ...
@@ -514,7 +524,7 @@ class PUUIDv3[TPrefix: str](PUUIDBase[TPrefix]):
             case _:
                 raise PUUIDError(ERR_MSG.INVALID_PUUIDv3_ARGS)
 
-        self._serial = f"{self._prefix}_{self._uuid}"
+        self._serial = None
 
 
 ################################################################################
@@ -526,7 +536,7 @@ class PUUIDv4[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 4 (randomly generated)."""
 
     _uuid: UUID
-    _serial: str
+    _serial: str | None
 
     def __init__(self, uuid: UUID | None = None) -> None:
         """
@@ -547,7 +557,7 @@ class PUUIDv4[TPrefix: str](PUUIDBase[TPrefix]):
                 ERR_MSG.UUID_VERSION_MISMATCH.format(expected=4, actual=uuid.version)
             )
         self._uuid = uuid if uuid else uuid4()
-        self._serial = f"{self._prefix}_{self._uuid}"
+        self._serial = None
 
     @override
     @classmethod
@@ -572,7 +582,7 @@ class PUUIDv5[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 5 (SHA-1 hash of namespace and name)."""
 
     _uuid: UUID
-    _serial: str
+    _serial: str | None
 
     @overload
     def __init__(self, *, namespace: UUID, name: str | bytes) -> None: ...
@@ -616,7 +626,7 @@ class PUUIDv5[TPrefix: str](PUUIDBase[TPrefix]):
             case _:
                 raise PUUIDError(ERR_MSG.INVALID_PUUIDv5_ARGS)
 
-        self._serial = f"{self._prefix}_{self._uuid}"
+        self._serial = None
 
 
 ################################################################################
@@ -628,7 +638,7 @@ class PUUIDv6[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 6 (reordered v1 for DB locality)."""
 
     _uuid: UUID
-    _serial: str
+    _serial: str | None
 
     @overload
     def __init__(
@@ -674,7 +684,7 @@ class PUUIDv6[TPrefix: str](PUUIDBase[TPrefix]):
             case _:
                 raise PUUIDError(ERR_MSG.INVALID_PUUIDv6_ARGS)
 
-        self._serial = f"{self._prefix}_{self._uuid}"
+        self._serial = None
 
     @override
     @classmethod
@@ -699,7 +709,7 @@ class PUUIDv7[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 7 (time-ordered)."""
 
     _uuid: UUID
-    _serial: str
+    _serial: str | None
 
     def __init__(self, uuid: UUID | None = None) -> None:
         """
@@ -720,7 +730,7 @@ class PUUIDv7[TPrefix: str](PUUIDBase[TPrefix]):
                 ERR_MSG.UUID_VERSION_MISMATCH.format(expected=7, actual=uuid.version)
             )
         self._uuid = uuid if uuid else uuid7()
-        self._serial = f"{self._prefix}_{self._uuid}"
+        self._serial = None
 
     @override
     @classmethod
@@ -745,7 +755,7 @@ class PUUIDv8[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 8 (custom implementation)."""
 
     _uuid: UUID
-    _serial: str
+    _serial: str | None
 
     @overload
     def __init__(
@@ -794,7 +804,7 @@ class PUUIDv8[TPrefix: str](PUUIDBase[TPrefix]):
             case _:
                 raise PUUIDError(ERR_MSG.INVALID_PUUIDv8_ARGS)
 
-        self._serial = f"{self._prefix}_{self._uuid}"
+        self._serial = None
 
     @override
     @classmethod
