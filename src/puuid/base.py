@@ -55,6 +55,7 @@ class ERR_MSG:
     FACTORY_UNSUPPORTED = "'PUUID.factory' is only supported for 'PUUIDv1', 'PUUIDv4', 'PUUIDv6', 'PUUIDv7' and 'PUUIDv8'!"
     PREFIX_DESERIALIZATION_ERROR = "Unable to deserialize prefix '{prefix}', separator '_' or UUID for '{classname}' from '{serial_puuid}'!"
     INVALID_TYPE_FOR_SERIAL_PUUID = "'{classname}' can not be created from invalid type '{type}' with value '{value}'!"
+    EMPTY_PREFIX_DISALLOWED = "Empty prefix is not allowed for '{classname}'!"
     INVALID_PUUIDv1_ARGS = "Invalid 'PUUIDv1' arguments: Provide either 'node' and 'clock_seq' or a 'uuid'!"
     INVALID_PUUIDv3_ARGS = "Invalid 'PUUIDv3' arguments: Provide either 'namespace' and 'name' or a 'uuid'!"
     INVALID_PUUIDv5_ARGS = "Invalid 'PUUIDv5' arguments: Provide either 'namespace' and 'name' or a 'uuid'!"
@@ -208,6 +209,9 @@ def _puuid_class_getitem_runtime(cls: _PUUIDClass, item: object) -> _ClassGetIte
     prefix = _try_extract_literal_string(normalized)
     if prefix is None:
         return GenericAlias(cls, args_tuple)
+
+    if not prefix:
+        raise PUUIDError(ERR_MSG.EMPTY_PREFIX_DISALLOWED.format(classname=cls.__name__))
 
     return _get_or_create_specialization(cls, args_tuple, prefix)
 

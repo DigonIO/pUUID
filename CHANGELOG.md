@@ -4,6 +4,7 @@
 
 ### Upgrade Notes
 
+- **Empty strings are now disallowed:** Attempting specialization with an empty string literal e.g. `class UserUUID(PUUIDv4[Literal[""]]):` now raises a `PUUIDError`
 - **Prefer the new specialization syntax; the old `_prefix` pattern is discouraged.**
   - Recommended (v1.1.0+): `UserUUID = PUUIDv4[Literal["user"]]`
   - Discouraged (v1.0.0 style): `class UserUUID(PUUIDv4[Literal["user"]]): _prefix = "user"`

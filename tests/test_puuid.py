@@ -518,3 +518,22 @@ def test_util_functions() -> None:
     assert user_id.prefix() == "user"
     assert user_id.uuid == uuid_instance
     assert isinstance(hash(user_id), int)
+
+
+type EmptyPrefix = Literal[""]
+
+
+def test_disallow_empty_prefix() -> None:
+    with pytest.raises(PUUIDError) as excinfo:
+        _a = PUUIDv4[Literal[""]]
+    assert (
+        f"Empty prefix is not allowed for '{PUUIDv4.__name__}'!"
+        == excinfo.value.message
+    )
+
+    with pytest.raises(PUUIDError) as excinfo:
+        _b = PUUIDv7[EmptyPrefix]
+    assert (
+        f"Empty prefix is not allowed for '{PUUIDv7.__name__}'!"
+        == excinfo.value.message
+    )
