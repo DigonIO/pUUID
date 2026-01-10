@@ -966,8 +966,13 @@ wheels = [
 name = "puuid"
 version = "1.1.0"
 source = { editable = "." }
-dependencies = [
+
+[package.optional-dependencies]
+pydantic = [
     { name = "pydantic" },
+]
+sqlalchemy = [
+    { name = "sqlalchemy" },
 ]
 
 [package.dev-dependencies]
@@ -989,12 +994,19 @@ dev = [
     { name = "ruff" },
     { name = "sqlalchemy", extra = ["mypy"] },
 ]
+pydantic = [
+    { name = "pydantic" },
+]
 sqlalchemy = [
     { name = "sqlalchemy" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pydantic", specifier = ">=2.12.5" }]
+requires-dist = [
+    { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.12.5" },
+    { name = "sqlalchemy", marker = "extra == 'sqlalchemy'", specifier = ">=2.0.45" },
+]
+provides-extras = ["pydantic", "sqlalchemy"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1015,6 +1027,7 @@ dev = [
     { name = "ruff", specifier = ">=0.14.10" },
     { name = "sqlalchemy", extras = ["mypy"], specifier = ">=2.0.45" },
 ]
+pydantic = [{ name = "pydantic", specifier = ">=2.12.5" }]
 sqlalchemy = [{ name = "sqlalchemy", specifier = ">=2.0.45" }]
 
 [[package]]

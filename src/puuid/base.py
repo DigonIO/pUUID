@@ -25,8 +25,28 @@ from typing import (
 from uuid import UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
 
 import annotationlib
-from pydantic import GetCoreSchemaHandler
-from pydantic_core import core_schema
+
+if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import core_schema
+
+    _PYDANTIC_AVAILABLE = True
+else:
+    try:
+        from pydantic import GetCoreSchemaHandler
+        from pydantic_core import core_schema
+
+        _PYDANTIC_AVAILABLE = True
+    except ModuleNotFoundError:
+        _PYDANTIC_AVAILABLE = False
+
+        class GetCoreSchemaHandler: ...
+
+        class _CoreSchema: ...
+
+        @final
+        class core_schema:
+            CoreSchema = _CoreSchema
 
 
 @final
@@ -333,8 +353,12 @@ class PUUIDBase[TPrefix: str](ABC):
         _source_type: object,
         _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
-        def validate(value: object) -> PUUIDBase[TPrefix]:
+        if not _PYDANTIC_AVAILABLE:
+            raise ModuleNotFoundError(
+                "pydantic is an optional dependency. Install with: pip install 'pUUID[pydantic]'"
+            )
 
+        def validate(value: object) -> PUUIDBase[TPrefix]:
             if isinstance(value, cls):
                 return value
 

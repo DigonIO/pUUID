@@ -1,6 +1,9 @@
 from typing import Literal
 
 import pytest
+
+pytest.importorskip("pydantic", reason="pydantic is an optional dependency")
+pytest.importorskip("pydantic_core", reason="pydantic is an optional dependency")
 from pydantic import BaseModel, ValidationError
 
 from puuid import PUUIDv4

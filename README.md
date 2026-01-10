@@ -35,6 +35,9 @@ Raw UUIDs like `019b9a2e-9856-...` are annoying to work with. They provide no co
 # NOTE: pUUID requires python 3.14+
 pip install pUUID
 
+# For Pydantic support:
+pip install 'pUUID[pydantic]'
+
 # For SQLAlchemy support:
 pip install 'pUUID[sqlalchemy]'
 ```
