@@ -5,9 +5,7 @@ import pytest
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.event import listen
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
-from sqlalchemy.pool.base import (  # pyright: ignore[reportPrivateUsage]
-    _ConnectionRecord,
-)
+from sqlalchemy.pool import ConnectionPoolEntry
 from sqlalchemy.sql.schema import ForeignKey
 
 from puuid import PUUIDv4
@@ -21,8 +19,7 @@ from puuid.sqlalchemy import SqlPUUID
 class BaseORM(DeclarativeBase): ...
 
 
-class UserUUID(PUUIDv4[Literal["user"]]):
-    _prefix = "user"
+UserUUID = PUUIDv4[Literal["user"]]
 
 
 class UserORM(BaseORM):
@@ -33,8 +30,7 @@ class UserORM(BaseORM):
     )
 
 
-class AddressUUID(PUUIDv4[Literal["address"]]):
-    _prefix = "address"
+AddressUUID = PUUIDv4[Literal["address"]]
 
 
 class AddressORM(BaseORM):
@@ -43,14 +39,13 @@ class AddressORM(BaseORM):
     id: Mapped[AddressUUID] = mapped_column(
         SqlPUUID(AddressUUID, prefix_length=7), primary_key=True
     )
-    user_id: Mapped[AddressUUID] = mapped_column(
+    user_id: Mapped[AddressUUID | None] = mapped_column(
         SqlPUUID(UserUUID), ForeignKey(UserORM.id), default=None, nullable=True
     )
 
 
 @pytest.fixture()
 def engine() -> Generator[Engine, None, None]:
-
     url = "sqlite:///:memory:"
     engine = create_engine(url, future=True)
     listen(engine, "connect", set_sqlite_pragma)
@@ -79,7 +74,6 @@ def db(engine: Engine) -> Generator[Session, None, None]:
 
 
 def test_serialize(db: Session) -> None:
-
     user = UserORM(id=UserUUID())
     address = AddressORM(id=AddressUUID())
 
@@ -89,7 +83,6 @@ def test_serialize(db: Session) -> None:
 
 
 def test_deserialize(db: Session) -> None:
-
     user_id = UserUUID()
     user_ref_1 = UserORM(id=user_id)
 
@@ -121,7 +114,8 @@ def test_deserialize(db: Session) -> None:
 
 # https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#foreign-key-support
 def set_sqlite_pragma(
-    dbapi_connection: Connection, _connection_record: _ConnectionRecord
+    dbapi_connection: Connection,
+    _connection_record: ConnectionPoolEntry,
 ) -> None:
     """
     Enable foreign key constraints for SQLite connections.

@@ -1,10 +1,18 @@
 # pUUID - API Reference
 
+## Exceptions
+
 ::: puuid.PUUIDError
     handler: python
 
-::: puuid.PUUID
+## Base Interface
+
+All versioned pUUIDs (v1-v8) inherit from this base class
+
+::: puuid.PUUIDBase
     handler: python
+
+## Versioned Variants
 
 ::: puuid.PUUIDv1
     handler: python
@@ -26,6 +34,8 @@
 
 ::: puuid.PUUIDv8
     handler: python
+
+## Integrations
 
 ::: puuid.sqlalchemy.SqlPUUID
     handler: python

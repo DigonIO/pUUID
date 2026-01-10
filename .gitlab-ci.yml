@@ -35,7 +35,7 @@ ruff:
   image: $IMG_PYTHON_UV_3_14
   script:
     - uv sync --all-groups
-    - uv run ruff check src
+    - uv run ruff check src tests
   allow_failure: true
 
 mypy:
@@ -43,7 +43,7 @@ mypy:
   image: $IMG_PYTHON_UV_3_14
   script:
     - uv sync --all-groups
-    - uv run mypy src
+    - uv run mypy src tests
   allow_failure: true
 
 pyright:
@@ -51,7 +51,7 @@ pyright:
   image: $IMG_PYTHON_UV_3_14
   script:
     - uv sync --all-groups
-    - uv run basedpyright src
+    - uv run basedpyright src tests
   allow_failure: true
 
 isort:

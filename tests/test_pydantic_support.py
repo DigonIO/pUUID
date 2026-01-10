@@ -1,22 +1,32 @@
 from typing import Literal
+from unittest.mock import patch
 
 import pytest
+
+pytest.importorskip("pydantic", reason="pydantic is an optional dependency")
+pytest.importorskip("pydantic_core", reason="pydantic is an optional dependency")
 from pydantic import BaseModel, ValidationError
 
 from puuid import PUUIDv4
 
-
-class UserUUID(PUUIDv4[Literal["user"]]):
-    _prefix = "user"
+UserUUID = PUUIDv4[Literal["user"]]
 
 
 class User(BaseModel):
     user_id: UserUUID
 
 
+def test_pydantic_not_available_error() -> None:
+    """Test that the property error is raised when pydantic is missing."""
+    with patch("puuid.base._PYDANTIC_AVAILABLE", False):
+        with pytest.raises(ModuleNotFoundError) as excinfo:
+            UserUUID.__get_pydantic_core_schema__(UserUUID, None)  # type: ignore
+        assert "pip install 'pUUID[pydantic]'" in str(excinfo.value)
+
+
 def test_serialization() -> None:
-    serial_id = f"user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
-    serial_json = '{"user_id":"' + serial_id + '"}'
+    serial_id = "user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
+    serial_json = f'{{"user_id":"{serial_id}"}}'
 
     user_id = UserUUID.from_string(serial_id)
     user = User(user_id=user_id)
@@ -25,8 +35,8 @@ def test_serialization() -> None:
 
 
 def test_deserialization() -> None:
-    serial_id = f"user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
-    serial_json = '{"user_id":"' + serial_id + '"}'
+    serial_id = "user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
+    serial_json = f'{{"user_id":"{serial_id}"}}'
 
     user = User.model_validate_json(serial_json)
 
@@ -47,11 +57,15 @@ def test_deserialization() -> None:
     ],
 )
 def test_deserialization_from_invalid_str(serial_id: str) -> None:
-    serial_json = '{"user_id":"' + serial_id + '"}'
-    with pytest.raises(ValidationError) as err:
-        user = User.model_validate_json(serial_json)
+    serial_json = f'{{"user_id":"{serial_id}"}}'
 
-    err_msg = f"Value error, Unable to deserialize prefix 'user', separator '_' or UUID for 'UserUUID' from '{serial_id}'!"
+    with pytest.raises(ValidationError) as err:
+        _ = User.model_validate_json(serial_json)
+
+    err_msg = (
+        "Value error, Unable to deserialize prefix 'user', separator '_' or UUID "
+        f"for '{UserUUID.__name__}' from '{serial_id}'!"
+    )
     assert err.value.errors()[0]["msg"] == err_msg
 
 
@@ -64,9 +78,14 @@ def test_deserialization_from_invalid_str(serial_id: str) -> None:
     ],
 )
 def test_deserialization_from_invalid_type(serial_id: str, serial_type: str) -> None:
-    serial_json = '{"user_id":' + serial_id + "}"
-    with pytest.raises(ValidationError) as err:
-        user = User.model_validate_json(serial_json)
+    serial_json = f'{{"user_id":{serial_id}}}'
 
-    err_msg = f"Value error, 'UserUUID' can not be created from invalid type '{serial_type}' with value '{serial_id}'!"
+    with pytest.raises(ValidationError) as err:
+        _ = User.model_validate_json(serial_json)
+
+    err_msg = (
+        "Value error, "
+        f"'{UserUUID.__name__}' can not be created from invalid type "
+        f"'{serial_type}' with value '{serial_id}'!"
+    )
     assert err.value.errors()[0]["msg"] == err_msg

@@ -25,8 +25,7 @@ from typing import Literal
 from uuid import UUID
 from puuid import PUUIDv4
 
-class UserUUID(PUUIDv4[Literal["user"]]):
-    _prefix = "user"
+UserUUID = PUUIDv4[Literal["user"]]
 
 # Generate a new random PUUID
 user_id = UserUUID()
@@ -54,18 +53,14 @@ from puuid import PUUIDv5, PUUIDv7, PUUIDv8
 
 
 # Time-based (ordered) UUIDs
-class EventUUID(PUUIDv7[Literal["evt"]]):
-    _prefix = "evt"
-
+EventUUID = PUUIDv7[Literal["evt"]]
 
 print(EventUUID())
 # evt_019b956e-ed25-70db-9d0a-0f30fb9047c2
 
 
 # Name-based UUIDs
-class DomainUUID(PUUIDv5[Literal["dom"]]):
-    _prefix = "dom"
-
+DomainUUID = PUUIDv5[Literal["dom"]]
 
 dom_id = DomainUUID(namespace=NAMESPACE_DNS, name="digon.io")
 print(dom_id)
@@ -73,9 +68,7 @@ print(dom_id)
 
 
 # Custom UUIDs
-class ChecksumUUID(PUUIDv8[Literal["chk"]]):
-    _prefix = "chk"
-
+ChecksumUUID = PUUIDv8[Literal["chk"]]
 
 chk_id = ChecksumUUID(a=0x123, b=0x456, c=0x789)
 print(chk_id)

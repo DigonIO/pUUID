@@ -1,11 +1,12 @@
 import random
-from typing import Literal, final
+from types import GenericAlias
+from typing import Literal, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
 
 import pytest
 
 from puuid import (
-    PUUID,
+    PUUIDBase,
     PUUIDError,
     PUUIDv1,
     PUUIDv3,
@@ -17,63 +18,68 @@ from puuid import (
 )
 from puuid.base import ERR_MSG
 
-
-@final
-class UserUUID(PUUIDv4[Literal["user"]]):
-    _prefix = "user"
-
-
-@final
-class Version1UUID(PUUIDv1[Literal["vers"]]):
-    _prefix = "vers"
-
-
-@final
-class Version3UUID(PUUIDv3[Literal["vers"]]):
-    _prefix = "vers"
+UserUUID = PUUIDv4[Literal["user"]]
+Version1UUID = PUUIDv1[Literal["ver1"]]
+Version3UUID = PUUIDv3[Literal["ver3"]]
+Version4UUID = PUUIDv4[Literal["ver4"]]
+Version5UUID = PUUIDv5[Literal["ver5"]]
+Version6UUID = PUUIDv6[Literal["ver6"]]
+Version7UUID = PUUIDv7[Literal["ver7"]]
+Version8UUID = PUUIDv8[Literal["ver8"]]
 
 
-@final
-class Version4UUID(PUUIDv4[Literal["vers"]]):
-    _prefix = "vers"
+# For Backwards compatibility checks
+class Version1UUIDBack(PUUIDv1[Literal["ver1b"]]): ...
 
 
-@final
-class Version5UUID(PUUIDv5[Literal["vers"]]):
-    _prefix = "vers"
+class Version3UUIDBack(PUUIDv3[Literal["ver3b"]]):
+    _prefix = "ver3b"  # <- type no longer in sync with `Literal["ver3b"]` as in v1.0.0
 
 
-@final
-class Version6UUID(PUUIDv6[Literal["vers"]]):
-    _prefix = "vers"
+def test_class_getitem_typevar_returns_generic_alias() -> None:
+    T = TypeVar("T", bound=str)
+    res = PUUIDv4[T]
+    assert isinstance(res, GenericAlias)
 
 
-@final
-class Version7UUID(PUUIDv7[Literal["vers"]]):
-    _prefix = "vers"
+def test_class_getitem_non_literal_returns_generic_alias() -> None:
+    res = PUUIDv4[str]
+    assert isinstance(res, GenericAlias)
 
 
-@final
-class Version8UUID(PUUIDv8[Literal["vers"]]):
-    _prefix = "vers"
+def test_class_getitem_literal_non_string_returns_generic_alias() -> None:
+    res = PUUIDv4.__class_getitem__(Literal[1])
+    assert isinstance(res, GenericAlias)
+
+
+def test_class_getitem_singleton_tuple_normalization() -> None:
+    user_a = PUUIDv4[Literal["user"]]
+    user_b = PUUIDv4.__class_getitem__((Literal["user"],))
+    assert user_a is user_b
 
 
 @pytest.mark.parametrize(
-    "uuid_cls, uuid",
+    "uuid_cls, uuid, prefix",
     [
-        (Version1UUID, uuid1()),
-        (Version3UUID, uuid3(NAMESPACE_DNS, "digon.io")),
-        (Version4UUID, uuid4()),
-        (Version5UUID, uuid5(NAMESPACE_DNS, "digon.io")),
-        (Version6UUID, uuid6()),
-        (Version7UUID, uuid7()),
-        (Version8UUID, uuid8()),
+        (UserUUID, uuid4(), "user"),
+        (Version1UUID, uuid1(), "ver1"),
+        (Version1UUIDBack, uuid1(), "ver1b"),
+        (Version3UUID, uuid3(NAMESPACE_DNS, "digon.io"), "ver3"),
+        (Version3UUIDBack, uuid3(NAMESPACE_DNS, "digon.io"), "ver3b"),
+        (Version4UUID, uuid4(), "ver4"),
+        (Version5UUID, uuid5(NAMESPACE_DNS, "digon.io"), "ver5"),
+        (Version6UUID, uuid6(), "ver6"),
+        (Version7UUID, uuid7(), "ver7"),
+        (Version8UUID, uuid8(), "ver8"),
     ],
 )
 def test_init_with_uuid_for_all_versions(
     uuid_cls: type[
-        Version1UUID
+        UserUUID
+        | Version1UUID
+        | Version1UUIDBack
         | Version3UUID
+        | Version3UUIDBack
         | Version4UUID
         | Version5UUID
         | Version6UUID
@@ -81,22 +87,44 @@ def test_init_with_uuid_for_all_versions(
         | Version8UUID
     ],
     uuid: UUID,
+    prefix: str,
 ) -> None:
-    assert uuid_cls(uuid=uuid)
+    assert uuid_cls.prefix() == prefix
+    instance = uuid_cls(uuid=uuid)
+    assert instance.prefix() == prefix
 
 
 @pytest.mark.parametrize(
-    "uuid_cls",
+    "uuid_realized, uuid_generic",
     [
-        Version1UUID,
-        Version4UUID,
-        Version6UUID,
-        Version7UUID,
-        Version8UUID,
+        (Version1UUID, PUUIDv1),
+        (Version1UUIDBack, PUUIDv1),
+        (Version4UUID, PUUIDv4),
+        (Version6UUID, PUUIDv6),
+        (Version7UUID, PUUIDv7),
+        (Version8UUID, PUUIDv8),
     ],
 )
-def test_factory_for_v1_v4_v6_v7_v8(uuid_cls: type[PUUID[Literal["vers"]]]) -> None:
-    assert isinstance(uuid_cls.factory(), uuid_cls)
+def test_factory_for_v1_v4_v6_v7_v8(
+    uuid_realized: type[PUUIDBase[Literal["vers"]]], uuid_generic: type[PUUIDBase[str]]
+) -> None:
+    instance = uuid_realized.factory()
+    assert isinstance(instance, uuid_generic)
+
+
+type UserPrefix = Literal["user"]
+
+
+def test_type_identity_caching() -> None:
+    a = list["str"]
+    b = list["str"]
+    assert a is not b
+    # the above passes for default generics, but due to caching our implementation might come as a surprise to some
+    user_a = PUUIDv4[UserPrefix]
+    user_b = PUUIDv4[Literal["user"]]
+    user_c = PUUIDv4[Literal["user"]]
+    assert user_a is user_b
+    assert user_b is user_c
 
 
 @pytest.mark.parametrize(
@@ -108,7 +136,17 @@ def test_factory_for_v1_v4_v6_v7_v8(uuid_cls: type[PUUID[Literal["vers"]]]) -> N
             ERR_MSG.UUID_VERSION_MISMATCH.format(expected=1, actual=4),
         ),
         (
+            Version1UUIDBack,
+            uuid4(),
+            ERR_MSG.UUID_VERSION_MISMATCH.format(expected=1, actual=4),
+        ),
+        (
             Version3UUID,
+            uuid4(),
+            ERR_MSG.UUID_VERSION_MISMATCH.format(expected=3, actual=4),
+        ),
+        (
+            Version3UUIDBack,
             uuid4(),
             ERR_MSG.UUID_VERSION_MISMATCH.format(expected=3, actual=4),
         ),
@@ -140,7 +178,17 @@ def test_factory_for_v1_v4_v6_v7_v8(uuid_cls: type[PUUID[Literal["vers"]]]) -> N
     ],
 )
 def test_init_failure_with_uuid_for_all_versions(
-    uuid_cls: type[Version1UUID | Version6UUID],
+    uuid_cls: type[
+        Version1UUID
+        | Version1UUIDBack
+        | Version3UUID
+        | Version3UUIDBack
+        | Version4UUID
+        | Version5UUID
+        | Version6UUID
+        | Version7UUID
+        | Version8UUID
+    ],
     uuid: UUID,
     err_msg: str,
 ) -> None:
@@ -158,11 +206,12 @@ def test_init_failure_with_uuid_for_all_versions(
     "uuid_cls, node, clock_seq, uuid",
     [
         (Version1UUID, None, None, None),
+        (Version1UUIDBack, None, None, None),
         (Version6UUID, None, None, None),
     ],
 )
 def test_init_with_none_for_v1_and_v6(
-    uuid_cls: type[Version1UUID | Version6UUID],
+    uuid_cls: type[Version1UUID | Version1UUIDBack | Version6UUID],
     node: int | None,
     clock_seq: int | None,
     uuid: UUID | None,
@@ -176,11 +225,12 @@ def test_init_with_none_for_v1_and_v6(
     "uuid_cls, node, clock_seq",
     [
         (Version1UUID, 123, 123),
+        (Version1UUIDBack, 123, 123),
         (Version6UUID, 123, 123),
     ],
 )
 def test_init_with_node_clock_for_v1_and_v6(
-    uuid_cls: type[Version1UUID | Version6UUID],
+    uuid_cls: type[Version1UUID | Version1UUIDBack | Version6UUID],
     node: int | None,
     clock_seq: int | None,
 ) -> None:
@@ -193,13 +243,16 @@ def test_init_with_node_clock_for_v1_and_v6(
         (Version1UUID, 123, 123, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
         (Version1UUID, None, 123, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
         (Version1UUID, 123, None, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
+        (Version1UUIDBack, 123, 123, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
+        (Version1UUIDBack, None, 123, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
+        (Version1UUIDBack, 123, None, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
         (Version6UUID, 123, 123, uuid6(), ERR_MSG.INVALID_PUUIDv6_ARGS),
         (Version6UUID, None, 123, uuid6(), ERR_MSG.INVALID_PUUIDv6_ARGS),
         (Version6UUID, 123, None, uuid6(), ERR_MSG.INVALID_PUUIDv6_ARGS),
     ],
 )
 def test_init_with_invalid_args_for_v1_and_v6(
-    uuid_cls: type[Version1UUID | Version6UUID],
+    uuid_cls: type[Version1UUID | Version1UUIDBack | Version6UUID],
     node: int | None,
     clock_seq: int | None,
     uuid: UUID,
@@ -216,18 +269,22 @@ def test_init_with_invalid_args_for_v1_and_v6(
 
 
 @pytest.mark.parametrize(
-    "uuid_cls, namespace, name",
+    "uuid_realized, uuid_generic, namespace, name",
     [
-        (Version3UUID, NAMESPACE_DNS, "digon.io"),
-        (Version5UUID, NAMESPACE_DNS, "digon.io"),
+        (Version3UUID, PUUIDv3, NAMESPACE_DNS, "digon.io"),
+        (Version3UUIDBack, PUUIDv3, NAMESPACE_DNS, "digon.io"),
+        (Version5UUID, PUUIDv5, NAMESPACE_DNS, "digon.io"),
     ],
 )
 def test_init_namespace_name_for_v3_v5(
-    uuid_cls: type[Version3UUID] | type[Version5UUID],
+    uuid_realized: type[Version3UUID] | type[Version3UUIDBack] | type[Version5UUID],
+    uuid_generic: type[PUUIDv3[str]] | type[PUUIDv5[str]],
     namespace: UUID,
     name: str,
 ) -> None:
-    assert isinstance(uuid_cls(namespace=namespace, name=name), uuid_cls)
+    instance = uuid_realized(namespace=namespace, name=name)
+    assert isinstance(instance, uuid_generic)
+    assert isinstance(uuid_realized(namespace=namespace, name=name), uuid_generic)
 
 
 @pytest.mark.parametrize(
@@ -249,6 +306,27 @@ def test_init_namespace_name_for_v3_v5(
         ),
         (
             Version3UUID,
+            NAMESPACE_DNS,
+            None,
+            uuid3(NAMESPACE_DNS, "digon.io"),
+            ERR_MSG.INVALID_PUUIDv3_ARGS,
+        ),
+        (
+            Version3UUIDBack,
+            NAMESPACE_DNS,
+            "digon.io",
+            uuid3(NAMESPACE_DNS, "digon.io"),
+            ERR_MSG.INVALID_PUUIDv3_ARGS,
+        ),
+        (
+            Version3UUIDBack,
+            None,
+            "digon.io",
+            uuid3(NAMESPACE_DNS, "digon.io"),
+            ERR_MSG.INVALID_PUUIDv3_ARGS,
+        ),
+        (
+            Version3UUIDBack,
             NAMESPACE_DNS,
             None,
             uuid3(NAMESPACE_DNS, "digon.io"),
@@ -278,14 +356,14 @@ def test_init_namespace_name_for_v3_v5(
     ],
 )
 def test_init_invalid_args_for_v3_v5(
-    uuid_cls: type[Version3UUID] | type[Version5UUID],
-    namespace: UUID,
-    name: str,
+    uuid_cls: type[Version3UUID] | type[Version3UUIDBack] | type[Version5UUID],
+    namespace: UUID | None,
+    name: str | None,
     uuid: UUID,
     err_msg: str,
 ) -> None:
     with pytest.raises(PUUIDError) as err:
-        uuid_cls(namespace=namespace, name=name, uuid=uuid)  # type: ignore
+        uuid_cls(namespace=namespace, name=name, uuid=uuid)  # type: ignore[arg-type]
     assert err.value.message == err_msg
 
 
@@ -293,10 +371,13 @@ def test_init_invalid_args_for_v3_v5(
     "uuid_cls",
     [
         Version3UUID,
+        Version3UUIDBack,
         Version5UUID,
     ],
 )
-def test_unsupported_factory(uuid_cls: type[Version3UUID | Version5UUID]) -> None:
+def test_unsupported_factory(
+    uuid_cls: type[Version3UUID | Version3UUIDBack | Version5UUID],
+) -> None:
     with pytest.raises(PUUIDError) as err:
         uuid_cls.factory()
     assert err.value.message == ERR_MSG.FACTORY_UNSUPPORTED
@@ -373,10 +454,10 @@ c = random.getrandbits(62)
     ],
 )
 def test_init_invalid_args_for_v8(
-    uuid_cls: type[Version3UUID] | type[Version5UUID],
-    a: int,
-    b: int,
-    c: int,
+    uuid_cls: type[Version8UUID],
+    a: int | None,
+    b: int | None,
+    c: int | None,
     uuid: UUID,
     err_msg: str,
 ) -> None:
@@ -392,14 +473,14 @@ def test_init_invalid_args_for_v8(
 
 def test_create_random() -> None:
     user_id = UserUUID()
-    assert isinstance(user_id, UserUUID)
+    assert isinstance(user_id, PUUIDv4)
 
 
 def test_create_with_UUID() -> None:
 
     known_uuid = uuid4()
     user_id = UserUUID(uuid=known_uuid)
-    assert isinstance(user_id, UserUUID)
+    assert isinstance(user_id, PUUIDv4)
 
     serial_user_id = f"user_{known_uuid}"
     assert user_id.to_string() == serial_user_id
@@ -407,7 +488,7 @@ def test_create_with_UUID() -> None:
 
 
 def test_create_from_str() -> None:
-    serial_user_id = f"user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
+    serial_user_id = "user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
 
     user_id = UserUUID.from_string(serial_user_id)
     assert str(user_id) == serial_user_id
@@ -430,18 +511,21 @@ def test_create_from_invalid_str(serial_user_id: str) -> None:
     with pytest.raises(PUUIDError) as err:
         _ = UserUUID.from_string(serial_user_id)
 
-    err_msg = f"Unable to deserialize prefix 'user', separator '_' or UUID for 'UserUUID' from '{serial_user_id}'!"
+    err_msg = (
+        "Unable to deserialize prefix 'user', separator '_' or UUID for "
+        f"'{UserUUID.__name__}' from '{serial_user_id}'!"
+    )
     assert err.value.message == err_msg
 
 
 def test_factory() -> None:
     user_id = UserUUID.factory()
-    assert isinstance(user_id, UserUUID)
+    assert type(user_id) is UserUUID
 
 
 def test_equal() -> None:
-    serial_user_1 = f"user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
-    serial_user_2 = f"user_1a3e0e89-a2d8-4950-bafa-24020e09b2a6"
+    serial_user_1 = "user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
+    serial_user_2 = "user_1a3e0e89-a2d8-4950-bafa-24020e09b2a6"
 
     assert UserUUID.from_string(serial_user_1) == UserUUID.from_string(serial_user_1)
     assert UserUUID.from_string(serial_user_1) != UserUUID.from_string(serial_user_2)
@@ -456,3 +540,29 @@ def test_util_functions() -> None:
     assert user_id.prefix() == "user"
     assert user_id.uuid == uuid_instance
     assert isinstance(hash(user_id), int)
+
+
+type EmptyPrefix = Literal[""]
+
+
+def test_disallow_empty_prefix() -> None:
+    with pytest.raises(PUUIDError) as excinfo:
+        _a = PUUIDv4[Literal[""]]
+    assert (
+        f"Empty prefix is not allowed for '{PUUIDv4.__name__}'!"
+        == excinfo.value.message
+    )
+
+    with pytest.raises(PUUIDError) as excinfo:
+        _b = PUUIDv7[EmptyPrefix]
+    assert (
+        f"Empty prefix is not allowed for '{PUUIDv7.__name__}'!"
+        == excinfo.value.message
+    )
+
+
+def test_to_string_is_cached() -> None:
+    user_id = UserUUID()
+    s1 = user_id.to_string()
+    s2 = user_id.to_string()
+    assert s1 is s2  # second call returns the cached string object
