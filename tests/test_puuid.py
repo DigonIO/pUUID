@@ -1,5 +1,6 @@
 import random
-from typing import Literal
+from types import GenericAlias
+from typing import Literal, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
 
 import pytest
@@ -33,6 +34,28 @@ class Version1UUIDBack(PUUIDv1[Literal["ver1b"]]): ...
 
 class Version3UUIDBack(PUUIDv3[Literal["ver3b"]]):
     _prefix = "ver3b"  # <- type no longer in sync with `Literal["ver3b"]` as in v1.0.0
+
+
+def test_class_getitem_typevar_returns_generic_alias() -> None:
+    T = TypeVar("T", bound=str)
+    res = PUUIDv4[T]
+    assert isinstance(res, GenericAlias)
+
+
+def test_class_getitem_non_literal_returns_generic_alias() -> None:
+    res = PUUIDv4[str]
+    assert isinstance(res, GenericAlias)
+
+
+def test_class_getitem_literal_non_string_returns_generic_alias() -> None:
+    res = PUUIDv4.__class_getitem__(Literal[1])
+    assert isinstance(res, GenericAlias)
+
+
+def test_class_getitem_singleton_tuple_normalization() -> None:
+    user_a = PUUIDv4[Literal["user"]]
+    user_b = PUUIDv4.__class_getitem__((Literal["user"],))
+    assert user_a is user_b
 
 
 @pytest.mark.parametrize(
@@ -207,7 +230,7 @@ def test_init_with_none_for_v1_and_v6(
     ],
 )
 def test_init_with_node_clock_for_v1_and_v6(
-    uuid_cls: type[Version1UUID | Version6UUID],
+    uuid_cls: type[Version1UUID | Version1UUIDBack | Version6UUID],
     node: int | None,
     clock_seq: int | None,
 ) -> None:
@@ -334,13 +357,13 @@ def test_init_namespace_name_for_v3_v5(
 )
 def test_init_invalid_args_for_v3_v5(
     uuid_cls: type[Version3UUID] | type[Version3UUIDBack] | type[Version5UUID],
-    namespace: UUID,
-    name: str,
+    namespace: UUID | None,
+    name: str | None,
     uuid: UUID,
     err_msg: str,
 ) -> None:
     with pytest.raises(PUUIDError) as err:
-        uuid_cls(namespace=namespace, name=name, uuid=uuid)  # type: ignore
+        uuid_cls(namespace=namespace, name=name, uuid=uuid)  # type: ignore[arg-type]
     assert err.value.message == err_msg
 
 
@@ -431,10 +454,10 @@ c = random.getrandbits(62)
     ],
 )
 def test_init_invalid_args_for_v8(
-    uuid_cls: type[Version3UUID] | type[Version3UUIDBack] | type[Version5UUID],
-    a: int,
-    b: int,
-    c: int,
+    uuid_cls: type[Version8UUID],
+    a: int | None,
+    b: int | None,
+    c: int | None,
     uuid: UUID,
     err_msg: str,
 ) -> None:
@@ -536,3 +559,10 @@ def test_disallow_empty_prefix() -> None:
         f"Empty prefix is not allowed for '{PUUIDv7.__name__}'!"
         == excinfo.value.message
     )
+
+
+def test_to_string_is_cached() -> None:
+    user_id = UserUUID()
+    s1 = user_id.to_string()
+    s2 = user_id.to_string()
+    assert s1 is s2  # second call returns the cached string object

@@ -230,16 +230,9 @@ class PUUIDBase[TPrefix: str](ABC):
     @abstractmethod
     def __init__(self, *, uuid: UUID) -> None: ...
 
-    # `__class_getitem__` is only implemented for runtime behavior (dynamic specialization
-    # on `Literal["..."]`). Static type checkers already understand `PUUIDBase[T]`
-    # subscription and would either ignore or be confused by a custom implementation here.
-    # Guarding it behind `if not TYPE_CHECKING` keeps the static generic semantics intact
-    # while still enabling the runtime specialization hook.
-    if not TYPE_CHECKING:
-
-        @classmethod
-        def __class_getitem__(cls, item: object) -> object:
-            return _puuid_class_getitem_runtime(cls, item)
+    @classmethod
+    def __class_getitem__(cls, item: object) -> object:
+        return _puuid_class_getitem_runtime(cls, item)
 
     @classmethod
     def prefix(cls) -> str:

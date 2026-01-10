@@ -1,4 +1,5 @@
 from typing import Literal
+from unittest.mock import patch
 
 import pytest
 
@@ -13,6 +14,14 @@ UserUUID = PUUIDv4[Literal["user"]]
 
 class User(BaseModel):
     user_id: UserUUID
+
+
+def test_pydantic_not_available_error() -> None:
+    """Test that the property error is raised when pydantic is missing."""
+    with patch("puuid.base._PYDANTIC_AVAILABLE", False):
+        with pytest.raises(ModuleNotFoundError) as excinfo:
+            UserUUID.__get_pydantic_core_schema__(UserUUID, None)  # type: ignore
+        assert "pip install 'pUUID[pydantic]'" in str(excinfo.value)
 
 
 def test_serialization() -> None:

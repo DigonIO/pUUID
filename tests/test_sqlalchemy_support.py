@@ -39,7 +39,7 @@ class AddressORM(BaseORM):
     id: Mapped[AddressUUID] = mapped_column(
         SqlPUUID(AddressUUID, prefix_length=7), primary_key=True
     )
-    user_id: Mapped[AddressUUID] = mapped_column(
+    user_id: Mapped[AddressUUID | None] = mapped_column(
         SqlPUUID(UserUUID), ForeignKey(UserORM.id), default=None, nullable=True
     )
 

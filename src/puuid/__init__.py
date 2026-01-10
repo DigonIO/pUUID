@@ -24,7 +24,6 @@ PUUID = PUUIDBase  # backwards compatibility
 
 __all__ = [
     "PUUID",
-    "PUUIDBase",
     "PUUIDv1",
     "PUUIDv3",
     "PUUIDv4",

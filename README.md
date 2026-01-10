@@ -23,7 +23,7 @@ Raw UUIDs like `019b9a2e-9856-...` are annoying to work with. They provide no co
 
 ## Features
 
-- **Human-Friendly:** Immediate context with `user_019b9a2e...` instead of `Error: Could not find entity 019b9a2e-9856-...` thanks to prefixing in logs, URLs, databases and more
+- **Human-Friendly:** Immediate context with prefixed UUIDs (e.g. `user_019b9a2e...`).
 - **Strong type guarantees:** Prevent passing of a `CustomerID` into a `payment_id` field.
 - **Standard Compliant:** Supports all UUID versions from [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html).
 - **Pydantic support.** [(Read more)](https://puuid.digon.io/quick_start/#pydantic-integration)
