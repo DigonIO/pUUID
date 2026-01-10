@@ -38,6 +38,7 @@ Standard UUIDs like `019b9a2e-9856-737c-955e-c4e4523a2176` are great for machine
 ## Installation
 
 ```bash
+# NOTE: pUUID requires python 3.14+
 pip install pUUID
 
 # For SQLAlchemy support:
@@ -52,15 +53,14 @@ Define a domain-specific ID by inheriting from a versioned base:
 from typing import Literal
 from puuid import PUUIDv7
 
-class UserUUID(PUUIDv7[Literal["user"]]):
-    _prefix = "user"
+UserUUID = PUUIDv7[Literal["user"]]
 
 # Generation
 uid = UserUUID()
 print(uid) # user_019b956e-ed25-70db-9d0a-0f30fb9047c2
 
 # Deserialization
-uid = UserUUID.from_string("user_019b956e-ed25-70db-9d0a-0f30fb9047c2")
+uid2 = UserUUID.from_string("user_019b956e-ed25-70db-9d0a-0f30fb9047c2")
 ```
 
 ## Resources

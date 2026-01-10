@@ -21,8 +21,7 @@ from puuid.sqlalchemy import SqlPUUID
 class BaseORM(DeclarativeBase): ...
 
 
-class UserUUID(PUUIDv4[Literal["user"]]):
-    _prefix = "user"
+UserUUID = PUUIDv4[Literal["user"]]
 
 
 class UserORM(BaseORM):
@@ -33,8 +32,7 @@ class UserORM(BaseORM):
     )
 
 
-class AddressUUID(PUUIDv4[Literal["address"]]):
-    _prefix = "address"
+AddressUUID = PUUIDv4[Literal["address"]]
 
 
 class AddressORM(BaseORM):

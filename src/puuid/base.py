@@ -5,9 +5,26 @@ Provides the abstract base class and version-specific implementations for Prefix
 """
 
 from abc import ABC, abstractmethod
-from typing import Self, final, overload, override
+from types import GenericAlias
+from typing import (
+    TYPE_CHECKING,
+    ClassVar,
+    Literal,
+    ParamSpec,
+    Self,
+    TypeAliasType,
+    TypeIs,
+    TypeVar,
+    TypeVarTuple,
+    final,
+    get_args,
+    get_origin,
+    overload,
+    override,
+)
 from uuid import UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
 
+import annotationlib
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
@@ -38,28 +55,127 @@ class PUUIDError(Exception):
 
 
 ################################################################################
-#### PUUID
+#### utilities
 ################################################################################
 
 
-class PUUID[TPrefix: str](ABC):
-    """Abstract Base Class for Prefixed UUIDs."""
+def _evaluate_type_alias(value: object) -> object:
+    """
+    Resolve a PEP 695 `type Alias = ...` (TypeAliasType) to its underlying value.
+    """
+    if isinstance(value, TypeAliasType):
+        return annotationlib.call_evaluate_function(
+            value.evaluate_value,
+            annotationlib.Format.VALUE,
+            owner=value,
+        )
+    return value
 
-    _prefix: TPrefix
+
+def _is_object_tuple(value: object) -> TypeIs[tuple[object, ...]]:
+    """Narrow `object` to `tuple[object, ...]` for static type checkers."""
+    return isinstance(value, tuple)
+
+
+def _is_deferred_type_arg(item: object) -> bool:
+    """
+    Return True if `item` is a type-parameter-like argument (TypeVar/ParamSpec/
+    TypeVarTuple) for which runtime specialization must not happen.
+    """
+    if isinstance(item, (TypeVar, ParamSpec, TypeVarTuple)):
+        return True
+    if _is_object_tuple(item):
+        return any(_is_deferred_type_arg(part) for part in item)
+    return False
+
+
+def _unwrap_singleton_tuple(item: object) -> object:
+    """
+    Normalize subscription arguments: `C[T]` can arrive as `T` or `(T,)`.
+    """
+    if _is_object_tuple(item) and len(item) == 1:
+        return item[0]
+    return item
+
+
+def _try_extract_literal_string(item: object) -> str | None:
+    """
+    If `item` is `Literal["..."]` (possibly via a `type` alias), return its string.
+    Otherwise return None.
+    """
+    evaluated = _evaluate_type_alias(item)
+    if get_origin(evaluated) is Literal:
+        args = get_args(evaluated)
+        if len(args) == 1 and isinstance(args[0], str):
+            return args[0]
+    return None
+
+
+################################################################################
+#### PUUIDBase
+################################################################################
+
+
+class PUUIDBase[TPrefix: str](ABC):
+    """Abstract Generic Base Class for Prefixed UUIDs."""
+
+    _prefix: ClassVar[str] = ""
     _serial: str
     _uuid: UUID
 
     @abstractmethod
     def __init__(self, *, uuid: UUID) -> None: ...
 
+    if not TYPE_CHECKING:
+        _specialization_cache: dict[tuple[type, str], type] = {}
+
+        @classmethod
+        def __class_getitem__(cls, item: object) -> object:
+            """
+            Runtime specialization hook.
+
+            - For `Literal["..."]` arguments: create/cache a real subclass and store
+              the extracted prefix on the class (`_prefix`).
+            - For everything else: fall back to normal runtime generic behavior
+              (`GenericAlias`).
+            """
+            args_tuple = item if _is_object_tuple(item) else (item,)
+            normalized = _unwrap_singleton_tuple(item)
+
+            if _is_deferred_type_arg(normalized):
+                return GenericAlias(cls, args_tuple)
+
+            extracted = _try_extract_literal_string(normalized)
+            if extracted is None:
+                return GenericAlias(cls, args_tuple)
+
+            key = (cls, extracted)
+            cached = PUUIDBase._specialization_cache.get(key)
+            if cached is not None:
+                return cached
+
+            new_name = f"{cls.__name__}_{extracted}"
+            new_cls = type(
+                new_name,
+                (cls,),
+                {
+                    "_prefix": extracted,
+                    "__doc__": cls.__doc__,
+                    "__module__": cls.__module__,
+                    "__orig_bases__": (GenericAlias(cls, args_tuple),),
+                },
+            )
+            PUUIDBase._specialization_cache[key] = new_cls
+            return new_cls
+
     @classmethod
-    def prefix(cls) -> TPrefix:
+    def prefix(cls) -> str:
         """
         Return the defined prefix for the class.
 
         Returns
         -------
-        TPrefix
+        str
             The prefix string.
         """
         return cls._prefix
@@ -153,13 +269,13 @@ class PUUID[TPrefix: str](ABC):
 
     @override
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, PUUID):
+        if isinstance(other, PUUIDBase):
             return self._serial == other._serial
         return False
 
     @override
     def __hash__(self) -> int:
-        return hash((self._prefix, self._uuid))
+        return hash((type(self)._prefix, self._uuid))
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -167,7 +283,7 @@ class PUUID[TPrefix: str](ABC):
         _source_type: object,
         _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
-        def validate(value: object) -> PUUID[TPrefix]:
+        def validate(value: object) -> PUUIDBase[TPrefix]:
 
             if isinstance(value, cls):
                 return value
@@ -184,7 +300,7 @@ class PUUID[TPrefix: str](ABC):
                 )
             )
 
-        def serialize(value: PUUID[TPrefix]) -> str:
+        def serialize(value: PUUIDBase[TPrefix]) -> str:
             return value.to_string()
 
         return core_schema.no_info_plain_validator_function(
@@ -201,7 +317,7 @@ class PUUID[TPrefix: str](ABC):
 ################################################################################
 
 
-class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
+class PUUIDv1[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 1 (MAC address and time)."""
 
     _uuid: UUID
@@ -272,7 +388,7 @@ class PUUIDv1[TPrefix: str](PUUID[TPrefix]):
 ################################################################################
 
 
-class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
+class PUUIDv3[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 3 (MD5 hash of namespace and name)."""
 
     _uuid: UUID
@@ -328,7 +444,7 @@ class PUUIDv3[TPrefix: str](PUUID[TPrefix]):
 ################################################################################
 
 
-class PUUIDv4[TPrefix: str](PUUID[TPrefix]):
+class PUUIDv4[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 4 (randomly generated)."""
 
     _uuid: UUID
@@ -374,7 +490,7 @@ class PUUIDv4[TPrefix: str](PUUID[TPrefix]):
 ################################################################################
 
 
-class PUUIDv5[TPrefix: str](PUUID[TPrefix]):
+class PUUIDv5[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 5 (SHA-1 hash of namespace and name)."""
 
     _uuid: UUID
@@ -430,7 +546,7 @@ class PUUIDv5[TPrefix: str](PUUID[TPrefix]):
 ################################################################################
 
 
-class PUUIDv6[TPrefix: str](PUUID[TPrefix]):
+class PUUIDv6[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 6 (reordered v1 for DB locality)."""
 
     _uuid: UUID
@@ -501,7 +617,7 @@ class PUUIDv6[TPrefix: str](PUUID[TPrefix]):
 ################################################################################
 
 
-class PUUIDv7[TPrefix: str](PUUID[TPrefix]):
+class PUUIDv7[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 7 (time-ordered)."""
 
     _uuid: UUID
@@ -547,7 +663,7 @@ class PUUIDv7[TPrefix: str](PUUID[TPrefix]):
 ################################################################################
 
 
-class PUUIDv8[TPrefix: str](PUUID[TPrefix]):
+class PUUIDv8[TPrefix: str](PUUIDBase[TPrefix]):
     """Prefixed UUID Version 8 (custom implementation)."""
 
     _uuid: UUID
