@@ -8,7 +8,6 @@ from pydantic import BaseModel, ValidationError
 
 from puuid import PUUIDv4
 
-
 UserUUID = PUUIDv4[Literal["user"]]
 
 

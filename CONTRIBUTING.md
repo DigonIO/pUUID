@@ -58,9 +58,9 @@ uv run mkdocs build -f docs/mkdocs.yml
 Run static analysis with:
 
 ```bash
-uv run ruff check src
-uv run mypy src
-uv run basedpyright src
+uv run ruff check src tests
+uv run mypy src tests
+uv run basedpyright src tests
 ```
 
 ## Style Guide

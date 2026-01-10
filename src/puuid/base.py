@@ -4,6 +4,7 @@ pUUID Base Implementation.
 Provides the abstract base class and version-specific implementations for Prefixed UUIDs.
 """
 
+import annotationlib
 from abc import ABC, abstractmethod
 from types import GenericAlias
 from typing import (
@@ -23,8 +24,6 @@ from typing import (
     override,
 )
 from uuid import UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
-
-import annotationlib
 
 if TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler

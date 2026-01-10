@@ -17,7 +17,6 @@ from puuid import (
 )
 from puuid.base import ERR_MSG
 
-
 UserUUID = PUUIDv4[Literal["user"]]
 Version1UUID = PUUIDv1[Literal["ver1"]]
 Version3UUID = PUUIDv3[Literal["ver3"]]
@@ -67,9 +66,9 @@ def test_init_with_uuid_for_all_versions(
     uuid: UUID,
     prefix: str,
 ) -> None:
-    assert uuid_cls._prefix == prefix
+    assert uuid_cls.prefix() == prefix
     instance = uuid_cls(uuid=uuid)
-    assert instance._prefix == prefix
+    assert instance.prefix() == prefix
 
 
 @pytest.mark.parametrize(
@@ -466,7 +465,7 @@ def test_create_with_UUID() -> None:
 
 
 def test_create_from_str() -> None:
-    serial_user_id = f"user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
+    serial_user_id = "user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
 
     user_id = UserUUID.from_string(serial_user_id)
     assert str(user_id) == serial_user_id
@@ -498,12 +497,12 @@ def test_create_from_invalid_str(serial_user_id: str) -> None:
 
 def test_factory() -> None:
     user_id = UserUUID.factory()
-    assert isinstance(user_id, UserUUID)
+    assert type(user_id) is UserUUID
 
 
 def test_equal() -> None:
-    serial_user_1 = f"user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
-    serial_user_2 = f"user_1a3e0e89-a2d8-4950-bafa-24020e09b2a6"
+    serial_user_1 = "user_1a3e0e89-a2d8-4950-bafa-24020e09b2a5"
+    serial_user_2 = "user_1a3e0e89-a2d8-4950-bafa-24020e09b2a6"
 
     assert UserUUID.from_string(serial_user_1) == UserUUID.from_string(serial_user_1)
     assert UserUUID.from_string(serial_user_1) != UserUUID.from_string(serial_user_2)

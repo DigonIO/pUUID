@@ -1,10 +1,26 @@
 import inspect
 import pydoc
-from typing import Literal, get_origin, get_args
-from puuid import PUUIDv7
 import uuid
+from types import GenericAlias
+from typing import Literal, TypeIs, cast, get_args, get_origin
+
+from puuid import PUUIDv7
 
 UserUUID = PUUIDv7[Literal["user"]]
+
+
+def _is_generic_alias_tuple(value: object) -> TypeIs[tuple[GenericAlias, ...]]:
+    if not isinstance(value, tuple):
+        return False
+
+    # pyright keeps tuple element types as Unknown when the tuple came from `object`.
+    items = cast(tuple[object, ...], value)
+
+    for item in items:
+        if not isinstance(item, GenericAlias):
+            return False
+
+    return True
 
 
 def test_dynamic_class_introspection_name_module() -> None:
@@ -22,7 +38,6 @@ def test_dynamic_class_introspection_doc() -> None:
     doc_output = pydoc.render_doc(UserUUID)
 
     assert "PUUIDv7_user" in doc_output
-
     assert (
         "Prefixed UUID Version 7" in doc_output
     )  # Should inherit docstring from PUUIDv7
@@ -51,11 +66,13 @@ def test_subclass_introspection() -> None:
 def test_origin_bases_integrity() -> None:
     # Verify that we haven't lost the generic origin information
     # required by some type-checking libraries at runtime
-    UserUUID = PUUIDv7[Literal["user"]]
+    user_uuid_cls = PUUIDv7[Literal["user"]]
 
-    assert hasattr(UserUUID, "__orig_bases__")
-    # The first base should represent the GenericAlias PUUIDv7[Literal["user"]]
-    orig_base = UserUUID.__orig_bases__[0]
+    orig_bases_obj = getattr(user_uuid_cls, "__orig_bases__", None)
+    assert _is_generic_alias_tuple(orig_bases_obj)
+
+    assert len(orig_bases_obj) >= 1
+    orig_base = orig_bases_obj[0]
 
     assert get_origin(orig_base).__name__ == "PUUIDv7"
     assert get_args(orig_base)[0] is Literal["user"]
