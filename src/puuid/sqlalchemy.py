@@ -23,9 +23,7 @@ class SqlPUUID[TPrefix: str](TypeDecorator[PUUIDBase[TPrefix]]):
 
     puuid_cls: type[PUUIDBase[TPrefix]]
 
-    def __init__(
-        self, puuid_cls: type[PUUIDBase[TPrefix]], prefix_length: int = 4
-    ) -> None:
+    def __init__(self, puuid_cls: type[PUUIDBase[TPrefix]]) -> None:
         """
         Initialize the SqlPUUID type.
 
@@ -34,11 +32,9 @@ class SqlPUUID[TPrefix: str](TypeDecorator[PUUIDBase[TPrefix]]):
         puuid_cls : type[PUUIDBase[TPrefix]]
             The pUUID class (e.g., `PUUIDv4[Literal["user"]]`) to associate with this
             column.
-        prefix_length : int, default 4
-            The length of the prefix string to calculate the column width.
         """
         self.puuid_cls = puuid_cls
-        varchar_length = prefix_length + _SEPARATOR_LENGTH + _UUID_LENGTH
+        varchar_length = len(puuid_cls.prefix()) + _SEPARATOR_LENGTH + _UUID_LENGTH
         super().__init__(length=varchar_length)
 
     @override

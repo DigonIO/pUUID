@@ -26,7 +26,7 @@ class UserORM(BaseORM):
     __tablename__ = "item_table"
 
     id: Mapped[UserUUID] = mapped_column(
-        SqlPUUID(UserUUID, prefix_length=4), primary_key=True, default=UserUUID.factory
+        SqlPUUID(UserUUID), primary_key=True, default=UserUUID.factory
     )
 
 
@@ -37,7 +37,7 @@ class AddressORM(BaseORM):
     __tablename__ = "address_table"
 
     id: Mapped[AddressUUID] = mapped_column(
-        SqlPUUID(AddressUUID, prefix_length=7), primary_key=True
+        SqlPUUID(AddressUUID), primary_key=True
     )
     user_id: Mapped[AddressUUID | None] = mapped_column(
         SqlPUUID(UserUUID), ForeignKey(UserORM.id), default=None, nullable=True
