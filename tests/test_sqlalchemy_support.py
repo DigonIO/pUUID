@@ -36,9 +36,7 @@ AddressUUID = PUUIDv4[Literal["address"]]
 class AddressORM(BaseORM):
     __tablename__ = "address_table"
 
-    id: Mapped[AddressUUID] = mapped_column(
-        SqlPUUID(AddressUUID), primary_key=True
-    )
+    id: Mapped[AddressUUID] = mapped_column(SqlPUUID(AddressUUID), primary_key=True)
     user_id: Mapped[AddressUUID | None] = mapped_column(
         SqlPUUID(UserUUID), ForeignKey(UserORM.id), default=None, nullable=True
     )
