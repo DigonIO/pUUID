@@ -104,16 +104,15 @@ class UserORM(BaseORM):
     __tablename__ = "users"
 
     id: Mapped[UserUUID] = mapped_column(
-        SqlPUUID(UserUUID, prefix_length=4),
+        SqlPUUID(UserUUID),
         primary_key=True,
         default=UserUUID.factory,
     )
 ```
 
 !!! warning "Prefix Length Matching"
-    The `prefix_length` argument in `SqlPUUID` is used to define the length of the underlying `VARCHAR` column.
 
-    If your `_prefix` is `"user"` (4 characters), you must set `prefix_length=4`. If you later change the prefix to something longer without updating the column width via a migration, the database will raise an error or truncate the ID.
+    If you later change the PUUID prefix without updating the database column width via a migration, the database might raise an error or truncate the PUUID.
 
     **Calculation logic:**
     `prefix_length` + `1` (separator) + `36` (UUID) = Total Column Width.

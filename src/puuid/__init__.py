@@ -4,7 +4,7 @@ pUUID - Prefixed UUIDs for Python with Pydantic & SQLAlchemy support.
 Author: Jendrik Potyka, Fabian Preiss
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __author__ = "Jendrik Potyka, Fabian Preiss"
 
 
