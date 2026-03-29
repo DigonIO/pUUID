@@ -17,22 +17,26 @@ from typing import (
     TypeIs,
     TypeVar,
     TypeVarTuple,
+    Final,
     final,
     get_args,
     get_origin,
     overload,
     override,
+    Any,
 )
-from uuid import UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
+from uuid import UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8, NAMESPACE_DNS
 
 if TYPE_CHECKING:
-    from pydantic import GetCoreSchemaHandler
+    from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
+    from pydantic.json_schema import JsonSchemaValue
     from pydantic_core import core_schema
 
     _PYDANTIC_AVAILABLE = True
 else:
     try:
-        from pydantic import GetCoreSchemaHandler
+        from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
+        from pydantic.json_schema import JsonSchemaValue
         from pydantic_core import core_schema
 
         _PYDANTIC_AVAILABLE = True
@@ -230,6 +234,19 @@ class PUUIDBase[TPrefix: str](ABC):
     @abstractmethod
     def __init__(self, *, uuid: UUID) -> None: ...
 
+    # NOTE: Violating Liskov Substitution Principle here - not great...
+    # this is a strong indicator, that we want to "swap" `__init__` with `factory`
+    # where `__init__` always takes a single `UUID` argument & checks version
+    # while factory can be different between all subclasses, depending on the available options
+    # for the respective uuid version
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+        instance = super().__new__(cls)
+        if not cls._prefix:
+            raise PUUIDError(
+                ERR_MSG.EMPTY_PREFIX_DISALLOWED.format(classname=cls.__name__)
+            )
+        return instance
+
     @classmethod
     def __class_getitem__(cls, item: object) -> object:
         return _puuid_class_getitem_runtime(cls, item)
@@ -383,13 +400,57 @@ class PUUIDBase[TPrefix: str](ABC):
         def serialize(value: PUUIDBase[TPrefix]) -> str:
             return value.to_string()
 
-        return core_schema.no_info_plain_validator_function(
-            validate,
+        def wrap_validate(value: object, handler: Any) -> PUUIDBase[TPrefix]:
+            return validate(value)
+
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_wrap_validator_function(
+                wrap_validate,
+                core_schema.str_schema(),
+            ),
+            python_schema=core_schema.no_info_plain_validator_function(validate),
             serialization=core_schema.plain_serializer_function_ser_schema(
                 serialize,
                 return_schema=core_schema.str_schema(),
             ),
         )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        version = getattr(cls, "VERSION", 0)
+        match version:
+            case 1:
+                examples = [f"{cls._prefix}_{uuid1()}" for _ in range(3)]
+            case 3:
+                examples = [
+                    f"{cls._prefix}_{uuid3(namespace=NAMESPACE_DNS, name="digon.io")}"
+                    for _ in range(3)
+                ]
+            case 4:
+                examples = [f"{cls._prefix}_{uuid4()}" for _ in range(3)]
+            case 5:
+                examples = [
+                    f"{cls._prefix}_{uuid5(namespace=NAMESPACE_DNS, name="digon.io")}"
+                    for _ in range(3)
+                ]
+            case 6:
+                examples = [f"{cls._prefix}_{uuid6()}" for _ in range(3)]
+            case 7:
+                examples = [f"{cls._prefix}_{uuid7()}" for _ in range(3)]
+            case 8:
+                examples = [f"{cls._prefix}_{uuid8()}" for _ in range(3)]
+            case _:
+                raise PUUIDError()
+
+        return {
+            "type": "string",
+            "title": cls.__name__,
+            "description": f"Prefixed UUID with prefix '{cls._prefix}'",
+            "examples": examples,
+            "pattern": rf"^{cls._prefix}_[0-9a-fA-F-]{{36}}$",
+        }
 
 
 ################################################################################
@@ -402,6 +463,7 @@ class PUUIDv1[TPrefix: str](PUUIDBase[TPrefix]):
 
     _uuid: UUID
     _serial: str | None
+    VERSION: Final[int] = 1
 
     @overload
     def __init__(
@@ -473,6 +535,7 @@ class PUUIDv3[TPrefix: str](PUUIDBase[TPrefix]):
 
     _uuid: UUID
     _serial: str | None
+    VERSION: Final[int] = 3
 
     @overload
     def __init__(self, *, namespace: UUID, name: str | bytes) -> None: ...
@@ -529,8 +592,9 @@ class PUUIDv4[TPrefix: str](PUUIDBase[TPrefix]):
 
     _uuid: UUID
     _serial: str | None
+    VERSION: Final[int] = 4
 
-    def __init__(self, uuid: UUID | None = None) -> None:
+    def __init__(self, *, uuid: UUID | None = None) -> None:
         """
         Initialize a PUUIDv4.
 
@@ -575,6 +639,7 @@ class PUUIDv5[TPrefix: str](PUUIDBase[TPrefix]):
 
     _uuid: UUID
     _serial: str | None
+    VERSION: Final[int] = 5
 
     @overload
     def __init__(self, *, namespace: UUID, name: str | bytes) -> None: ...
@@ -631,6 +696,7 @@ class PUUIDv6[TPrefix: str](PUUIDBase[TPrefix]):
 
     _uuid: UUID
     _serial: str | None
+    VERSION: Final[int] = 6
 
     @overload
     def __init__(
@@ -702,6 +768,7 @@ class PUUIDv7[TPrefix: str](PUUIDBase[TPrefix]):
 
     _uuid: UUID
     _serial: str | None
+    VERSION: Final[int] = 7
 
     def __init__(self, uuid: UUID | None = None) -> None:
         """
@@ -748,6 +815,7 @@ class PUUIDv8[TPrefix: str](PUUIDBase[TPrefix]):
 
     _uuid: UUID
     _serial: str | None
+    VERSION: Final[int] = 8
 
     @overload
     def __init__(

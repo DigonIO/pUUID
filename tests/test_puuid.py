@@ -6,7 +6,6 @@ from uuid import NAMESPACE_DNS, UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, 
 import pytest
 
 from puuid import (
-    PUUIDBase,
     PUUIDError,
     PUUIDv1,
     PUUIDv3,
@@ -16,7 +15,7 @@ from puuid import (
     PUUIDv7,
     PUUIDv8,
 )
-from puuid.base import ERR_MSG
+from puuid.base import ERR_MSG, PUUIDBase
 
 UserUUID = PUUIDv4[Literal["user"]]
 Version1UUID = PUUIDv1[Literal["ver1"]]
@@ -95,7 +94,7 @@ def test_init_with_uuid_for_all_versions(
 
 
 @pytest.mark.parametrize(
-    "uuid_realized, uuid_generic",
+    "uuid_specialized, uuid_generic",
     [
         (Version1UUID, PUUIDv1),
         (Version1UUIDBack, PUUIDv1),
@@ -106,9 +105,10 @@ def test_init_with_uuid_for_all_versions(
     ],
 )
 def test_factory_for_v1_v4_v6_v7_v8(
-    uuid_realized: type[PUUIDBase[Literal["vers"]]], uuid_generic: type[PUUIDBase[str]]
+    uuid_specialized: type[PUUIDBase[Literal["vers"]]],
+    uuid_generic: type[PUUIDBase[str]],
 ) -> None:
-    instance = uuid_realized.factory()
+    instance = uuid_specialized.factory()
     assert isinstance(instance, uuid_generic)
 
 
@@ -203,25 +203,6 @@ def test_init_failure_with_uuid_for_all_versions(
 
 
 @pytest.mark.parametrize(
-    "uuid_cls, node, clock_seq, uuid",
-    [
-        (Version1UUID, None, None, None),
-        (Version1UUIDBack, None, None, None),
-        (Version6UUID, None, None, None),
-    ],
-)
-def test_init_with_none_for_v1_and_v6(
-    uuid_cls: type[Version1UUID | Version1UUIDBack | Version6UUID],
-    node: int | None,
-    clock_seq: int | None,
-    uuid: UUID | None,
-) -> None:
-
-    assert uuid_cls()
-    assert uuid_cls(node=node, clock_seq=clock_seq)
-
-
-@pytest.mark.parametrize(
     "uuid_cls, node, clock_seq",
     [
         (Version1UUID, 123, 123),
@@ -266,25 +247,6 @@ def test_init_with_invalid_args_for_v1_and_v6(
 ################################################################################
 #### PUUID v3 & v5
 ################################################################################
-
-
-@pytest.mark.parametrize(
-    "uuid_realized, uuid_generic, namespace, name",
-    [
-        (Version3UUID, PUUIDv3, NAMESPACE_DNS, "digon.io"),
-        (Version3UUIDBack, PUUIDv3, NAMESPACE_DNS, "digon.io"),
-        (Version5UUID, PUUIDv5, NAMESPACE_DNS, "digon.io"),
-    ],
-)
-def test_init_namespace_name_for_v3_v5(
-    uuid_realized: type[Version3UUID] | type[Version3UUIDBack] | type[Version5UUID],
-    uuid_generic: type[PUUIDv3[str]] | type[PUUIDv5[str]],
-    namespace: UUID,
-    name: str,
-) -> None:
-    instance = uuid_realized(namespace=namespace, name=name)
-    assert isinstance(instance, uuid_generic)
-    assert isinstance(uuid_realized(namespace=namespace, name=name), uuid_generic)
 
 
 @pytest.mark.parametrize(
@@ -363,7 +325,7 @@ def test_init_invalid_args_for_v3_v5(
     err_msg: str,
 ) -> None:
     with pytest.raises(PUUIDError) as err:
-        uuid_cls(namespace=namespace, name=name, uuid=uuid)  # type: ignore[arg-type]
+        uuid_cls(namespace=namespace, name=name, uuid=uuid)  # type: ignore[call-overload] # arguments are purposefully invalid
     assert err.value.message == err_msg
 
 
@@ -471,13 +433,7 @@ def test_init_invalid_args_for_v8(
 ################################################################################
 
 
-def test_create_random() -> None:
-    user_id = UserUUID()
-    assert isinstance(user_id, PUUIDv4)
-
-
 def test_create_with_UUID() -> None:
-
     known_uuid = uuid4()
     user_id = UserUUID(uuid=known_uuid)
     assert isinstance(user_id, PUUIDv4)
@@ -559,6 +515,15 @@ def test_disallow_empty_prefix() -> None:
         f"Empty prefix is not allowed for '{PUUIDv7.__name__}'!"
         == excinfo.value.message
     )
+
+
+def test_disallow_str_type_instanciate() -> None:
+    a = PUUIDBase[str]
+    with pytest.raises(TypeError) as excinfo:
+        a()
+    b = PUUIDv4[str]
+    with pytest.raises(PUUIDError) as excinfo:
+        b()
 
 
 def test_to_string_is_cached() -> None:

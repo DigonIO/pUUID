@@ -9,7 +9,6 @@ __author__ = "Jendrik Potyka, Fabian Preiss"
 
 
 from puuid.base import (
-    PUUIDBase,
     PUUIDError,
     PUUIDv1,
     PUUIDv3,
@@ -20,10 +19,8 @@ from puuid.base import (
     PUUIDv8,
 )
 
-PUUID = PUUIDBase  # backwards compatibility
 
 __all__ = [
-    "PUUID",
     "PUUIDv1",
     "PUUIDv3",
     "PUUIDv4",
