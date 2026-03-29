@@ -1,0 +1,5 @@
+{
+  "mypy-type-checker.importStrategy": "fromEnvironment",
+  "mypy-type-checker.interpreter": ["${workspaceFolder}/.venv/bin/python"],
+  "mypy-type-checker.args": ["--config-file", "pyproject.toml"]
+}
