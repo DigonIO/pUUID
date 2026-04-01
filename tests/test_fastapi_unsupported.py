@@ -1,5 +1,6 @@
-import pytest
 from typing import Literal
+
+import pytest
 
 pytest.importorskip("fastapi", reason="FastAPI is an optional dependency")
 pytest.importorskip("httpx", reason="httpx is required for FastAPI TestClient")
@@ -7,6 +8,7 @@ pytest.importorskip("pydantic", reason="Pydantic is an optional dependency")
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
 from puuid import PUUIDv4, PUUIDv7
 from puuid.base import PUUIDBase, PUUIDError
 

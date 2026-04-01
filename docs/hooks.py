@@ -1,6 +1,6 @@
 from mkdocs.config.defaults import MkDocsConfig
-from mkdocs.structure.pages import Page
 from mkdocs.structure.files import Files
+from mkdocs.structure.pages import Page
 
 DESCRIPTIONS: dict[str, str] = {
     "index.md": "Prefixed UUIDs for Python with Pydantic & SQLAlchemy support.",

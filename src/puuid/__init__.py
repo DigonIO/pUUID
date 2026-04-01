@@ -19,7 +19,6 @@ from puuid.base import (
     PUUIDv8,
 )
 
-
 __all__ = [
     "PUUIDv1",
     "PUUIDv3",

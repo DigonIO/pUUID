@@ -1,6 +1,7 @@
-import pytest
-from typing import Literal
 import re
+from typing import Literal
+
+import pytest
 
 pytest.importorskip("fastapi", reason="FastAPI is an optional dependency")
 pytest.importorskip("httpx", reason="httpx is required for FastAPI TestClient")
@@ -9,7 +10,8 @@ pytest.importorskip("pydantic", reason="Pydantic is an optional dependency")
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
-from puuid import PUUIDv4, PUUIDv7, PUUIDError
+
+from puuid import PUUIDError, PUUIDv4, PUUIDv7
 from puuid.base import ERR_MSG
 
 UserUUID = PUUIDv4[Literal["user"]]
@@ -250,12 +252,9 @@ def test_fastapi_puid(client: TestClient) -> None:
             raise AssertionError
 
     assert input_val == doc_id.to_string()
-    assert (
-        f"Value error, {ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
+    assert f"Value error, {ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
         prefix="user", classname="PUUIDv4_user", serial_puuid=input_val
-    )}"
-        == msg
-    )
+    )}" == msg
 
 
 def test_payload(client: TestClient) -> None:

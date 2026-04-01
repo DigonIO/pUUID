@@ -9,7 +9,9 @@ from abc import ABC, abstractmethod
 from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
+    Any,
     ClassVar,
+    Final,
     Literal,
     ParamSpec,
     Self,
@@ -17,15 +19,13 @@ from typing import (
     TypeIs,
     TypeVar,
     TypeVarTuple,
-    Final,
     final,
     get_args,
     get_origin,
     overload,
     override,
-    Any,
 )
-from uuid import UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8, NAMESPACE_DNS
+from uuid import NAMESPACE_DNS, UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
 
 if TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler

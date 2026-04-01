@@ -1,13 +1,14 @@
 from typing import Literal
 from unittest.mock import patch
+
 import pytest
 
 pytest.importorskip("pydantic", reason="pydantic is an optional dependency")
 pytest.importorskip("pydantic_core", reason="pydantic is an optional dependency")
 from pydantic import BaseModel, ValidationError
-from puuid.base import ERR_MSG
 
-from puuid import PUUIDv4, PUUIDv7, PUUIDError
+from puuid import PUUIDError, PUUIDv4, PUUIDv7
+from puuid.base import ERR_MSG
 
 UserUUID = PUUIDv4[Literal["user"]]
 DocUUID = PUUIDv7[Literal["doc"]]
