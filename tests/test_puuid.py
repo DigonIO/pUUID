@@ -37,7 +37,7 @@ class Version3UUIDBack(PUUIDv3[Literal["ver3b"]]):
 
 def test_class_getitem_typevar_returns_generic_alias() -> None:
     T = TypeVar("T", bound=str)
-    res = PUUIDv4[T]
+    res = PUUIDv4[T]  # pyright: ignore[reportGeneralTypeIssues]
     assert isinstance(res, GenericAlias)
 
 
@@ -519,11 +519,19 @@ def test_disallow_empty_prefix() -> None:
 
 def test_disallow_str_type_instanciate() -> None:
     a = PUUIDBase[str]
-    with pytest.raises(TypeError) as excinfo:
-        a()
+    with pytest.raises(TypeError) as excinfo_1:
+        a()  # type: ignore
+
+    assert excinfo_1.value.args == (
+        "Can't instantiate abstract class PUUIDBase without an implementation for abstract method '__init__'",
+    )
+
     b = PUUIDv4[str]
-    with pytest.raises(PUUIDError) as excinfo:
+    with pytest.raises(PUUIDError) as excinfo_2:
         b()
+    assert excinfo_2.value.message == ERR_MSG.EMPTY_PREFIX_DISALLOWED.format(
+        classname="PUUIDv4"
+    )
 
 
 def test_to_string_is_cached() -> None:
