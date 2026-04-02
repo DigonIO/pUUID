@@ -31,7 +31,7 @@ def create_app() -> FastAPI:
 
     def get_path_param(user_id: UserUUID) -> DocUUID:
         # fake doc lookup:
-        return DocUUID()
+        return DocUUID.factory()
 
     def post_payload(payload: Payload) -> Payload:
         return payload
@@ -231,7 +231,7 @@ def test_openapi_spec__payload(client: TestClient) -> None:
 
 
 def test_fastapi_puid(client: TestClient) -> None:
-    puid = UserUUID()
+    puid = UserUUID.factory()
     response = client.get(f"/path_param/{puid.to_string()}")
     doc_id = DocUUID.from_string(response.json())
 
@@ -261,8 +261,8 @@ def test_fastapi_puid(client: TestClient) -> None:
 
 
 def test_payload(client: TestClient) -> None:
-    uid = UserUUID()
-    doc = DocUUID()
+    uid = UserUUID.factory()
+    doc = DocUUID.factory()
     payload = {"user_id": uid.to_string(), "doc_id": doc.to_string()}
 
     response = client.post("/payload", json=payload)

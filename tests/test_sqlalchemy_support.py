@@ -72,8 +72,8 @@ def db(engine: Engine) -> Generator[Session, None, None]:
 
 
 def test_serialize(db: Session) -> None:
-    user = UserORM(id=UserUUID())
-    address = AddressORM(id=AddressUUID())
+    user = UserORM(id=UserUUID.factory())
+    address = AddressORM(id=AddressUUID.factory())
 
     db.add(user)
     db.add(address)
@@ -81,7 +81,7 @@ def test_serialize(db: Session) -> None:
 
 
 def test_deserialize(db: Session) -> None:
-    user_id = UserUUID()
+    user_id = UserUUID.factory()
     user_ref_1 = UserORM(id=user_id)
 
     db.add(user_ref_1)
@@ -92,7 +92,7 @@ def test_deserialize(db: Session) -> None:
     assert user_ref_2 is not None
     assert user_ref_1.id == user_ref_2.id
 
-    address_ref_1 = AddressORM(id=AddressUUID())
+    address_ref_1 = AddressORM(id=AddressUUID.factory())
     address_id = address_ref_1.id
 
     db.add(address_ref_1)

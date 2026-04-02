@@ -1,4 +1,3 @@
-import random
 import typing
 from typing import Literal, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, uuid8
@@ -101,7 +100,9 @@ def test_init_with_uuid_for_all_versions(
     ],
 )
 def test_factory_for_v1_v4_v6_v7_v8(
-    uuid_specialized: type[PUUIDBase[Literal["vers"]]],
+    uuid_specialized: type[
+        Version1UUID | Version4UUID | Version6UUID | Version7UUID | Version8UUID
+    ],
     uuid_generic: type[PUUIDBase[str]],
 ) -> None:
     instance = uuid_specialized.factory()
@@ -186,192 +187,7 @@ def test_init_with_node_clock_for_v1_and_v6(
     node: int | None,
     clock_seq: int | None,
 ) -> None:
-    assert uuid_cls(node=node, clock_seq=clock_seq)
-
-
-@pytest.mark.parametrize(
-    "uuid_cls, node, clock_seq, uuid, err_msg",
-    [
-        (Version1UUID, 123, 123, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
-        (Version1UUID, None, 123, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
-        (Version1UUID, 123, None, uuid1(), ERR_MSG.INVALID_PUUIDv1_ARGS),
-        (Version6UUID, 123, 123, uuid6(), ERR_MSG.INVALID_PUUIDv6_ARGS),
-        (Version6UUID, None, 123, uuid6(), ERR_MSG.INVALID_PUUIDv6_ARGS),
-        (Version6UUID, 123, None, uuid6(), ERR_MSG.INVALID_PUUIDv6_ARGS),
-    ],
-)
-def test_init_with_invalid_args_for_v1_and_v6(
-    uuid_cls: type[Version1UUID | Version6UUID],
-    node: int | None,
-    clock_seq: int | None,
-    uuid: UUID,
-    err_msg: str,
-) -> None:
-    with pytest.raises(PUUIDError) as err:
-        uuid_cls(node=node, clock_seq=clock_seq, uuid=uuid)  # type: ignore
-    assert err.value.message == err_msg
-
-
-################################################################################
-#### PUUID v3 & v5
-################################################################################
-
-
-@pytest.mark.parametrize(
-    "uuid_cls, namespace, name, uuid, err_msg",
-    [
-        (
-            Version3UUID,
-            NAMESPACE_DNS,
-            "digon.io",
-            uuid3(NAMESPACE_DNS, "digon.io"),
-            ERR_MSG.INVALID_PUUIDv3_ARGS,
-        ),
-        (
-            Version3UUID,
-            None,
-            "digon.io",
-            uuid3(NAMESPACE_DNS, "digon.io"),
-            ERR_MSG.INVALID_PUUIDv3_ARGS,
-        ),
-        (
-            Version3UUID,
-            NAMESPACE_DNS,
-            None,
-            uuid3(NAMESPACE_DNS, "digon.io"),
-            ERR_MSG.INVALID_PUUIDv3_ARGS,
-        ),
-        (
-            Version5UUID,
-            NAMESPACE_DNS,
-            "digon.io",
-            uuid5(NAMESPACE_DNS, "digon.io"),
-            ERR_MSG.INVALID_PUUIDv5_ARGS,
-        ),
-        (
-            Version5UUID,
-            None,
-            "digon.io",
-            uuid5(NAMESPACE_DNS, "digon.io"),
-            ERR_MSG.INVALID_PUUIDv5_ARGS,
-        ),
-        (
-            Version5UUID,
-            NAMESPACE_DNS,
-            None,
-            uuid5(NAMESPACE_DNS, "digon.io"),
-            ERR_MSG.INVALID_PUUIDv5_ARGS,
-        ),
-    ],
-)
-def test_init_invalid_args_for_v3_v5(
-    uuid_cls: type[Version3UUID] | type[Version5UUID],
-    namespace: UUID | None,
-    name: str | None,
-    uuid: UUID,
-    err_msg: str,
-) -> None:
-    with pytest.raises(PUUIDError) as err:
-        uuid_cls(namespace=namespace, name=name, uuid=uuid)  # type: ignore[call-overload] # arguments are purposefully invalid
-    assert err.value.message == err_msg
-
-
-@pytest.mark.parametrize(
-    "uuid_cls",
-    [
-        Version3UUID,
-        Version5UUID,
-    ],
-)
-def test_unsupported_factory(
-    uuid_cls: type[Version3UUID | Version5UUID],
-) -> None:
-    with pytest.raises(PUUIDError) as err:
-        uuid_cls.factory()
-    assert err.value.message == ERR_MSG.FACTORY_UNSUPPORTED
-
-
-################################################################################
-#### PUUID v8
-################################################################################
-
-a = random.getrandbits(48)
-b = random.getrandbits(12)
-c = random.getrandbits(62)
-
-
-@pytest.mark.parametrize(
-    "uuid_cls, a, b, c, uuid, err_msg",
-    [
-        (
-            Version8UUID,
-            a,
-            b,
-            c,
-            uuid8(),
-            ERR_MSG.INVALID_PUUIDv8_ARGS,
-        ),
-        (
-            Version8UUID,
-            None,
-            b,
-            c,
-            uuid8(),
-            ERR_MSG.INVALID_PUUIDv8_ARGS,
-        ),
-        (
-            Version8UUID,
-            a,
-            None,
-            c,
-            uuid8(),
-            ERR_MSG.INVALID_PUUIDv8_ARGS,
-        ),
-        (
-            Version8UUID,
-            a,
-            b,
-            None,
-            uuid8(),
-            ERR_MSG.INVALID_PUUIDv8_ARGS,
-        ),
-        (
-            Version8UUID,
-            a,
-            None,
-            None,
-            uuid8(),
-            ERR_MSG.INVALID_PUUIDv8_ARGS,
-        ),
-        (
-            Version8UUID,
-            None,
-            b,
-            None,
-            uuid8(),
-            ERR_MSG.INVALID_PUUIDv8_ARGS,
-        ),
-        (
-            Version8UUID,
-            None,
-            None,
-            c,
-            uuid8(),
-            ERR_MSG.INVALID_PUUIDv8_ARGS,
-        ),
-    ],
-)
-def test_init_invalid_args_for_v8(
-    uuid_cls: type[Version8UUID],
-    a: int | None,
-    b: int | None,
-    c: int | None,
-    uuid: UUID,
-    err_msg: str,
-) -> None:
-    with pytest.raises(PUUIDError) as err:
-        uuid_cls(a=a, b=b, c=c, uuid=uuid)  # type: ignore
-    assert err.value.message == err_msg
+    assert uuid_cls.factory(node=node, clock_seq=clock_seq)
 
 
 ################################################################################
@@ -432,7 +248,7 @@ def test_equal() -> None:
     assert UserUUID.from_string(serial_user_1) == UserUUID.from_string(serial_user_1)
     assert UserUUID.from_string(serial_user_1) != UserUUID.from_string(serial_user_2)
 
-    assert UserUUID() != "Digon.IO GmbH"
+    assert UserUUID.factory() != "Digon.IO GmbH"
 
 
 def test_util_functions() -> None:
@@ -484,19 +300,19 @@ def test_disallow_str_type_instanciate() -> None:
 
     b = PUUIDv4[str]
     with pytest.raises(PUUIDError) as excinfo_2:
-        b()
+        b.factory()
     assert excinfo_2.value.message == ERR_MSG.EMPTY_PREFIX_DISALLOWED.format(
         classname="PUUIDv4"
     )
     with pytest.raises(PUUIDError) as excinfo_3:
-        PUUIDv4[str]()
+        PUUIDv4[str].factory()
     assert excinfo_3.value.message == ERR_MSG.EMPTY_PREFIX_DISALLOWED.format(
         classname="PUUIDv4"
     )
 
 
 def test_to_string_is_cached() -> None:
-    user_id = UserUUID()
+    user_id = UserUUID.factory()
     s1 = user_id.to_string()
     s2 = user_id.to_string()
     assert s1 is s2  # second call returns the cached string object

@@ -28,7 +28,7 @@ from puuid import PUUIDv4
 class UserUUID(PUUIDv4[Literal["user"]]): ...
 
 # Generate a new random PUUID
-user_id = UserUUID()
+user_id = UserUUID.factory()
 print(user_id)
 # user_b100f10f-6876-4b61-984f-2c74be42fcd4
 
@@ -55,14 +55,14 @@ from puuid import PUUIDv5, PUUIDv7, PUUIDv8
 # Time-based (ordered) UUIDs
 class EventUUID(PUUIDv7[Literal["evt"]]): ...
 
-print(EventUUID())
+print(EventUUID.factory())
 # evt_019b956e-ed25-70db-9d0a-0f30fb9047c2
 
 
 # Name-based UUIDs
 class DomainUUID(PUUIDv5[Literal["dom"]]): ...
 
-dom_id = DomainUUID(namespace=NAMESPACE_DNS, name="digon.io")
+dom_id = DomainUUID.factory(namespace=NAMESPACE_DNS, name="digon.io")
 print(dom_id)
 # dom_cfbff0d1-9375-5685-968c-48ce8b15ae17
 
@@ -70,7 +70,7 @@ print(dom_id)
 # Custom UUIDs
 class ChecksumUUID(PUUIDv8[Literal["chk"]]): ...
 
-chk_id = ChecksumUUID(a=0x123, b=0x456, c=0x789)
+chk_id = ChecksumUUID.factory(a=0x123, b=0x456, c=0x789)
 print(chk_id)
 # chk_00000000-0123-8456-8000-000000000789
 ```
@@ -85,7 +85,7 @@ from pydantic import BaseModel
 class User(BaseModel):
     user_id: UserUUID
 
-user = User(user_id=UserUUID())
+user = User(user_id=UserUUID.factory())
 # Validation works with strings too
 user = User(user_id="user_b100f10f-6876-4b61-984f-2c74be42fcd4")
 ```

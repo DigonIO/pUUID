@@ -17,7 +17,7 @@ def test_dynamic_class_introspection_name_module() -> None:
 def test_dynamic_class_introspection_signature() -> None:
     sig = inspect.signature(UserUUID)
     assert "uuid" in sig.parameters
-    assert sig.parameters["uuid"].annotation == uuid.UUID | None
+    assert sig.parameters["uuid"].annotation == uuid.UUID
 
 
 def test_dynamic_class_introspection_doc() -> None:
