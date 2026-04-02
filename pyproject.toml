@@ -1,6 +1,6 @@
 [project]
 name = "pUUID"
-version = "1.2.0"
+version = "2.0.0"
 license = "LGPL-3.0-only"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -45,17 +45,24 @@ dev = [
     "mkdocs>=1.6.1",
     "mkdocs-coverage>=2.0.0",
     "mkdocs-material[imaging]>=9.7.1",
-    "mkdocstrings[python]>=1.0.0",
+    "mkdocstrings[python]>=1.0.0",     # griffe dependency does not resolve correctly
     "pdbpp>=0.11.7",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "pytest-markdown-docs>=0.9.0",
     "ruff>=0.14.10",
     "sqlalchemy[mypy]>=2.0.45",
+    "fastapi>=0.135.1",
+    "httpx>=0.28.1",
 ]
 
 sqlalchemy = ["sqlalchemy>=2.0.45"]
 pydantic = ["pydantic>=2.12.5"]
+
+[tool.uv]
+exclude-newer = "1 week"
+
+exclude-newer-package = { requests = "2026-03-25T15:00:00Z" }
 
 [tool.black]
 target-version = ['py313'] # black is still not properly supporting py314

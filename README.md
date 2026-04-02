@@ -27,6 +27,7 @@ Raw UUIDs like `019b9a2e-9856-...` are annoying to work with. They provide no co
 - **Strong type guarantees:** Prevent passing of a `CustomerID` into a `payment_id` field.
 - **Standard Compliant:** Supports all UUID versions from [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html).
 - **Pydantic support.** [(Read more)](https://puuid.digon.io/quick_start/#pydantic-integration)
+- **FastAPI support** (just use Pydantic as you want)
 - **SQLAlchemy support.** [(Read more)](https://puuid.digon.io/quick_start/#sqlalchemy-integration)
 
 ## Installation
@@ -50,10 +51,10 @@ Define a domain-specific ID by inheriting from a versioned base:
 from typing import Literal
 from puuid import PUUIDv7
 
-UserUUID = PUUIDv7[Literal["user"]]
+class UserUUID(PUUIDv7[Literal["user"]]): ...
 
 # Generation
-uid = UserUUID()
+uid = UserUUID.factory()
 print(uid) # user_019b956e-ed25-70db-9d0a-0f30fb9047c2
 
 # Deserialization

@@ -20,9 +20,9 @@ variables:
 
   IMG_ARCH_LINUX: archlinux:base-20251228.0.475343
 
-  # 0.9.8-python3.14-bookworm
-  # https://github.com/astral-sh/uv/pkgs/container/uv/569901911?tag=0.9.8-python3.14-bookworm
-  IMG_PYTHON_UV_3_14: "ghcr.io/astral-sh/uv@sha256:cd33eb64e2c434b4d5cd843192ef55e7d7a21e0dd590586550d1e44eab672456"
+  # 0.10.12-python3.14-trixie
+  # https://github.com/astral-sh/uv/pkgs/container/uv/746844545?tag=0.10.12-python3.14-trixie
+  IMG_PYTHON_UV_3_14: "ghcr.io/astral-sh/uv@sha256:5536c05ce7abeb80bf5424920d64c09da589a0a1ec4552ecf0374a1082830658"
 
   IMG_DOC: ${CONTAINER_REGISTRY_URL}/puuid-doc:${CI_COMMIT_SHORT_SHA}
 
@@ -34,7 +34,7 @@ ruff:
   stage: analysis
   image: $IMG_PYTHON_UV_3_14
   script:
-    - uv sync --all-groups
+    - uv sync --all-groups --locked
     - uv run ruff check src tests
   allow_failure: true
 
@@ -42,7 +42,7 @@ mypy:
   stage: analysis
   image: $IMG_PYTHON_UV_3_14
   script:
-    - uv sync --all-groups
+    - uv sync --all-groups --locked
     - uv run mypy src tests
   allow_failure: true
 
@@ -50,7 +50,7 @@ pyright:
   stage: analysis
   image: $IMG_PYTHON_UV_3_14
   script:
-    - uv sync --all-groups
+    - uv sync --all-groups --locked
     - uv run basedpyright src tests
   allow_failure: true
 
@@ -58,7 +58,7 @@ isort:
   stage: analysis
   image: $IMG_PYTHON_UV_3_14
   script:
-    - uv sync --all-groups
+    - uv sync --all-groups --locked
     - uv run isort --check-only src tests
   allow_failure: false
 
@@ -66,7 +66,7 @@ black:
   stage: analysis
   image: $IMG_PYTHON_UV_3_14
   script:
-    - uv sync --all-groups
+    - uv sync --all-groups --locked
     - uv run black --check src tests
   allow_failure: false
 
@@ -78,7 +78,7 @@ pytest_3_14:
   stage: test
   image: $IMG_PYTHON_UV_3_14
   script:
-    - uv sync --all-groups
+    - uv sync --all-groups --locked
     - uv run pytest --cov=src/puuid/ tests
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
@@ -89,7 +89,7 @@ pydoctest_3_14:
   stage: test
   image: $IMG_PYTHON_UV_3_14
   script:
-    - uv sync --all-groups
+    - uv sync --all-groups --locked
     - uv run pytest --markdown-docs --markdown-docs-syntax=superfences docs/pages
 
 ####################################################################################################
@@ -100,7 +100,7 @@ doc_site:
   stage: build_1
   image: $IMG_PYTHON_UV_3_14
   script:
-    - uv sync --all-groups
+    - uv sync --all-groups --locked
     - uv run coverage html
     - uv run mkdocs build -f docs/mkdocs.yml
   artifacts:

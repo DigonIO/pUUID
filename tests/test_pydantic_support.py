@@ -7,9 +7,14 @@ pytest.importorskip("pydantic", reason="pydantic is an optional dependency")
 pytest.importorskip("pydantic_core", reason="pydantic is an optional dependency")
 from pydantic import BaseModel, ValidationError
 
-from puuid import PUUIDv4
+from puuid import PUUIDError, PUUIDv4, PUUIDv7
+from puuid.base import ERR_MSG
 
-UserUUID = PUUIDv4[Literal["user"]]
+
+class UserUUID(PUUIDv4[Literal["user"]]): ...
+
+
+class DocUUID(PUUIDv7[Literal["doc"]]): ...
 
 
 class User(BaseModel):
@@ -41,6 +46,46 @@ def test_deserialization() -> None:
     user = User.model_validate_json(serial_json)
 
     assert user.user_id.to_string() == serial_id
+
+
+def test_model_schema_json() -> None:
+    spec = User.model_json_schema()
+    match spec:
+        case {
+            "properties": {
+                "user_id": {
+                    "description": "Prefixed UUID with prefix 'user'",
+                    "examples": examples,
+                    "pattern": "^user_[0-9a-fA-F-]{36}$",
+                    "title": "UserUUID",
+                    "type": "string",
+                }
+            },
+            "required": ["user_id"],
+            "title": "User",
+            "type": "object",
+        }:
+            ...
+        case _:
+            assert False
+
+    for example in examples:
+        _user_id = UserUUID.from_string(example)
+
+    class OtherID(PUUIDv4[Literal["other"]]): ...
+
+    for example in examples:
+        with pytest.raises(PUUIDError) as err_1:
+            _other_id = OtherID.from_string(example)
+        assert err_1.value.message == ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
+            prefix="other", classname="OtherID", serial_puuid=example
+        )
+
+        with pytest.raises(PUUIDError) as err_2:
+            _doc_id = DocUUID.from_string(example)
+        assert err_2.value.message == ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
+            prefix="doc", classname="DocUUID", serial_puuid=example
+        )
 
 
 @pytest.mark.parametrize(

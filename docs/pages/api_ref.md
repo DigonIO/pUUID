@@ -9,7 +9,7 @@
 
 All versioned pUUIDs (v1-v8) inherit from this base class
 
-::: puuid.PUUIDBase
+::: puuid.base.PUUIDBase
     handler: python
 
 ## Versioned Variants

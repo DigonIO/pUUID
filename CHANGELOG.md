@@ -1,5 +1,24 @@
 # Changelog
 
+## v2.0.0
+
+### Upgrade Notes
+
+- Direct instantiation like `UserUUID()` no longer generates new UUIDs
+  - Use `UserUUID.factory()` for random generation
+  - Use `UserUUID(factory_uuid)` to wrap existing UUID instances
+  - Version-specific factory methods accept their required parameters:
+    - PUUIDv1/v6: node, clock_seq
+    - PUUIDv3/v5: namespace, name
+    - PUUIDv8: a, b, c
+    - PUUIDv4/v7: no parameters
+- The specialization syntax (`UserUUID = PUUIDv4[Literal["user"]]`) is no longer supported. Instead write `class UserUUID(PUUIDv4[Literal["user"]]): ...`. The [rationale behind this change](./limitations_and_design_choices.md).
+
+### Added
+
+- PUUID is now compatible for use in FastAPI using Pydantic models.
+- `isinstance` checks and `case` clauses are correctly understood by major type checkers.
+
 ## v1.2.0
 
 ### Upgrade Notes
