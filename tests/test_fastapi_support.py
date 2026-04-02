@@ -14,8 +14,11 @@ from pydantic import BaseModel
 from puuid import PUUIDError, PUUIDv4, PUUIDv7
 from puuid.base import ERR_MSG
 
-UserUUID = PUUIDv4[Literal["user"]]
-DocUUID = PUUIDv7[Literal["doc"]]
+
+class UserUUID(PUUIDv4[Literal["user"]]): ...
+
+
+class DocUUID(PUUIDv7[Literal["doc"]]): ...
 
 
 class Payload(BaseModel):
@@ -150,14 +153,14 @@ def test_openapi_spec__payload(client: TestClient) -> None:
                         "properties": {
                             "user_id": {
                                 "pattern": user_pattern_input_str,
-                                "title": "PUUIDv4_user",
+                                "title": "UserUUID",
                                 "examples": user_examples_input,
                             },
                             "doc_id": {
                                 "anyOf": [
                                     {
                                         "pattern": doc_pattern_input_str,
-                                        "title": "PUUIDv7_doc",
+                                        "title": "DocUUID",
                                         "examples": doc_examples_input,
                                     },
                                     {"type": "null"},
@@ -171,7 +174,7 @@ def test_openapi_spec__payload(client: TestClient) -> None:
                         "properties": {
                             "user_id": {
                                 "pattern": user_pattern_output_str,
-                                "title": "PUUIDv4_user",
+                                "title": "UserUUID",
                                 "examples": user_examples_output,
                             },
                             "doc_id": {
@@ -179,7 +182,7 @@ def test_openapi_spec__payload(client: TestClient) -> None:
                                     {
                                         "type": "string",
                                         "pattern": doc_pattern_output_str,
-                                        "title": "PUUIDv7_doc",
+                                        "title": "DocUUID",
                                         "examples": doc_examples_output,
                                     },
                                     {"type": "null"},
@@ -210,7 +213,7 @@ def test_openapi_spec__payload(client: TestClient) -> None:
         with pytest.raises(PUUIDError) as err_1:
             _other_id = DocUUID.from_string(user_example)
         assert err_1.value.message == ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
-            prefix="doc", classname="PUUIDv7_doc", serial_puuid=user_example
+            prefix="doc", classname="DocUUID", serial_puuid=user_example
         )
 
     for doc_example in [*doc_examples_input, *doc_examples_output]:
@@ -223,7 +226,7 @@ def test_openapi_spec__payload(client: TestClient) -> None:
         with pytest.raises(PUUIDError) as err_1:
             _user_id = UserUUID.from_string(doc_example)
         assert err_1.value.message == ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
-            prefix="user", classname="PUUIDv4_user", serial_puuid=doc_example
+            prefix="user", classname="UserUUID", serial_puuid=doc_example
         )
 
 
@@ -253,7 +256,7 @@ def test_fastapi_puid(client: TestClient) -> None:
 
     assert input_val == doc_id.to_string()
     assert f"Value error, {ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
-        prefix="user", classname="PUUIDv4_user", serial_puuid=input_val
+        prefix="user", classname="UserUUID", serial_puuid=input_val
     )}" == msg
 
 

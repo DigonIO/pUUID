@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.0.0
+
+### Upgrade Notes
+
+- The specialization syntax (`UserUUID = PUUIDv4[Literal["user"]]`) is no longer supported. Instead write `class UserUUID(PUUIDv4[Literal["user"]]): ...`. The [rationale behind this change](./limitations_and_design_choices.md).
+
+### Added
+
+- PUUID is now compatible for use in FastAPI using Pydantic models.
+- `isinstance` checks and `case` clauses are correctly understood by major type checkers.
+
 ## v1.2.0
 
 ### Upgrade Notes

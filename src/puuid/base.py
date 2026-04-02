@@ -6,19 +6,14 @@ Provides the abstract base class and version-specific implementations for Prefix
 
 import annotationlib
 from abc import ABC, abstractmethod
-from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     Final,
     Literal,
-    ParamSpec,
     Self,
     TypeAliasType,
-    TypeIs,
-    TypeVar,
-    TypeVarTuple,
     final,
     get_args,
     get_origin,
@@ -82,13 +77,6 @@ class PUUIDError(Exception):
 #### utilities
 ################################################################################
 
-type _SubscriptionArgs = tuple[object, ...]
-type _PUUIDClass = type[PUUIDBase[str]]
-type _ClassGetItemReturn = GenericAlias | _PUUIDClass
-
-type _SpecializationCacheKey = tuple[_PUUIDClass, str]
-_SPECIALIZATION_CACHE: dict[_SpecializationCacheKey, _PUUIDClass] = {}
-
 
 def _evaluate_type_alias(value: object) -> object:
     """
@@ -101,32 +89,6 @@ def _evaluate_type_alias(value: object) -> object:
             owner=value,
         )
     return value
-
-
-def _is_object_tuple(value: object) -> TypeIs[tuple[object, ...]]:
-    """Narrow `object` to `tuple[object, ...]` for static type checkers."""
-    return isinstance(value, tuple)
-
-
-def _is_deferred_type_arg(item: object) -> bool:
-    """
-    Return True if `item` is a type-parameter-like argument (TypeVar/ParamSpec/
-    TypeVarTuple) for which runtime specialization must not happen.
-    """
-    if isinstance(item, (TypeVar, ParamSpec, TypeVarTuple)):
-        return True
-    if _is_object_tuple(item):
-        return any(_is_deferred_type_arg(part) for part in item)
-    return False
-
-
-def _unwrap_singleton_tuple(item: object) -> object:
-    """
-    Normalize subscription arguments: `C[T]` can arrive as `T` or `(T,)`.
-    """
-    if _is_object_tuple(item) and len(item) == 1:
-        return item[0]
-    return item
 
 
 def _try_extract_literal_string(item: object) -> str | None:
@@ -142,83 +104,6 @@ def _try_extract_literal_string(item: object) -> str | None:
     return None
 
 
-@overload
-def _normalize_class_getitem_item(
-    item: tuple[object, ...],
-) -> tuple[_SubscriptionArgs, object]: ...
-@overload
-def _normalize_class_getitem_item(item: object) -> tuple[_SubscriptionArgs, object]: ...
-def _normalize_class_getitem_item(item: object) -> tuple[_SubscriptionArgs, object]:
-    args_tuple: _SubscriptionArgs = item if _is_object_tuple(item) else (item,)
-    normalized = _unwrap_singleton_tuple(item)
-    return args_tuple, normalized
-
-
-def _is_puuid_class(value: type) -> TypeIs[_PUUIDClass]:
-    return issubclass(value, PUUIDBase)
-
-
-def _build_specialized_puuid_class(
-    cls: _PUUIDClass,
-    args_tuple: _SubscriptionArgs,
-    prefix: str,
-) -> _PUUIDClass:
-    new_name = f"{cls.__name__}_{prefix}"
-    new_cls_untyped = type(
-        new_name,
-        (cls,),
-        {
-            "_prefix": prefix,
-            "__doc__": cls.__doc__,
-            "__module__": cls.__module__,
-            "__orig_bases__": (GenericAlias(cls, args_tuple),),
-        },
-    )
-
-    if not _is_puuid_class(new_cls_untyped):
-        raise TypeError(f"Expected a PUUIDBase subclass, got {new_cls_untyped!r}")
-    return new_cls_untyped
-
-
-def _get_or_create_specialization(
-    cls: _PUUIDClass,
-    args_tuple: _SubscriptionArgs,
-    prefix: str,
-) -> _PUUIDClass:
-    key: _SpecializationCacheKey = (cls, prefix)
-
-    cached = _SPECIALIZATION_CACHE.get(key)
-    if cached is not None:
-        return cached
-
-    specialized = _build_specialized_puuid_class(cls, args_tuple, prefix)
-    _SPECIALIZATION_CACHE[key] = specialized
-    return specialized
-
-
-def _puuid_class_getitem_runtime(cls: _PUUIDClass, item: object) -> _ClassGetItemReturn:
-    """
-    Runtime specialization hook for `PUUIDBase.__class_getitem__`.
-
-    Returns:
-      - GenericAlias for "normal" runtime generic behavior
-      - Specialized subclass for `Literal["..."]` prefixes (cached)
-    """
-    args_tuple, normalized = _normalize_class_getitem_item(item)
-
-    if _is_deferred_type_arg(normalized):
-        return GenericAlias(cls, args_tuple)
-
-    prefix = _try_extract_literal_string(normalized)
-    if prefix is None:
-        return GenericAlias(cls, args_tuple)
-
-    if not prefix:
-        raise PUUIDError(ERR_MSG.EMPTY_PREFIX_DISALLOWED.format(classname=cls.__name__))
-
-    return _get_or_create_specialization(cls, args_tuple, prefix)
-
-
 ################################################################################
 #### PUUIDBase
 ################################################################################
@@ -231,14 +116,32 @@ class PUUIDBase[TPrefix: str](ABC):
     _serial: str | None
     _uuid: UUID
 
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        # Automatic prefix assignment from the type parameter
+        for base in getattr(cls, "__orig_bases__", []):
+            origin = get_origin(base)
+            if origin is not None and issubclass(origin, PUUIDBase):
+                args = get_args(base)
+                if args:
+                    prefix = _try_extract_literal_string(args[0])
+                    if prefix is None:  # e.g. args[0] is TypeVar TPrefix
+                        return
+                    if prefix == "":
+                        raise PUUIDError(
+                            ERR_MSG.EMPTY_PREFIX_DISALLOWED.format(
+                                classname=cls.__name__
+                            )
+                        )
+                    cls._prefix = prefix
+                    return
+        raise AssertionError(
+            "Something unexpected happened in the usage of the PUUID library"
+        )
+
     @abstractmethod
     def __init__(self, *, uuid: UUID) -> None: ...
 
-    # NOTE: Violating Liskov Substitution Principle here - not great...
-    # this is a strong indicator, that we want to "swap" `__init__` with `factory`
-    # where `__init__` always takes a single `UUID` argument & checks version
-    # while factory can be different between all subclasses, depending on the available options
-    # for the respective uuid version
     def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         instance = super().__new__(cls)
         if not cls._prefix:
@@ -246,10 +149,6 @@ class PUUIDBase[TPrefix: str](ABC):
                 ERR_MSG.EMPTY_PREFIX_DISALLOWED.format(classname=cls.__name__)
             )
         return instance
-
-    @classmethod
-    def __class_getitem__(cls, item: object) -> object:
-        return _puuid_class_getitem_runtime(cls, item)
 
     @classmethod
     def prefix(cls) -> str:

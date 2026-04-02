@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.14"
 
 [options]
-exclude-newer = "2026-03-21T00:35:48.559005866Z"
+exclude-newer = "2026-03-26T00:01:10.59382158Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -1079,7 +1079,7 @@ wheels = [
 
 [[package]]
 name = "puuid"
-version = "1.2.0"
+version = "2.0.0"
 source = { editable = "." }
 
 [package.optional-dependencies]

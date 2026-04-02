@@ -50,7 +50,7 @@ Define a domain-specific ID by inheriting from a versioned base:
 from typing import Literal
 from puuid import PUUIDv7
 
-UserUUID = PUUIDv7[Literal["user"]]
+class UserUUID(PUUIDv7[Literal["user"]]): ...
 
 # Generation
 uid = UserUUID()

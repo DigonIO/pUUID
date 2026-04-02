@@ -10,8 +10,11 @@ from pydantic import BaseModel, ValidationError
 from puuid import PUUIDError, PUUIDv4, PUUIDv7
 from puuid.base import ERR_MSG
 
-UserUUID = PUUIDv4[Literal["user"]]
-DocUUID = PUUIDv7[Literal["doc"]]
+
+class UserUUID(PUUIDv4[Literal["user"]]): ...
+
+
+class DocUUID(PUUIDv7[Literal["doc"]]): ...
 
 
 class User(BaseModel):
@@ -54,7 +57,7 @@ def test_model_schema_json() -> None:
                     "description": "Prefixed UUID with prefix 'user'",
                     "examples": examples,
                     "pattern": "^user_[0-9a-fA-F-]{36}$",
-                    "title": "PUUIDv4_user",
+                    "title": "UserUUID",
                     "type": "string",
                 }
             },
@@ -69,18 +72,19 @@ def test_model_schema_json() -> None:
     for example in examples:
         _user_id = UserUUID.from_string(example)
 
-    OtherID = PUUIDv4[Literal["other"]]
+    class OtherID(PUUIDv4[Literal["other"]]): ...
+
     for example in examples:
         with pytest.raises(PUUIDError) as err_1:
             _other_id = OtherID.from_string(example)
         assert err_1.value.message == ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
-            prefix="other", classname="PUUIDv4_other", serial_puuid=example
+            prefix="other", classname="OtherID", serial_puuid=example
         )
 
         with pytest.raises(PUUIDError) as err_2:
             _doc_id = DocUUID.from_string(example)
         assert err_2.value.message == ERR_MSG.PREFIX_DESERIALIZATION_ERROR.format(
-            prefix="doc", classname="PUUIDv7_doc", serial_puuid=example
+            prefix="doc", classname="DocUUID", serial_puuid=example
         )
 
 

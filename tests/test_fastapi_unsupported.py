@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from puuid import PUUIDv4, PUUIDv7
-from puuid.base import PUUIDBase, PUUIDError
+from puuid.base import PUUIDBase
 
 UserUUID = PUUIDv4[Literal["user"]]
 DocUUID = PUUIDv7[Literal["doc"]]
@@ -98,10 +98,10 @@ def client_bare_v4_str(app_bare_v4_str: FastAPI) -> TestClient:
 
 
 def test_instanciate_bad_api() -> None:
-    with pytest.raises(PUUIDError):
+    with pytest.raises(AssertionError):
         create_app_empty_str()
 
-    with pytest.raises(PUUIDError):
+    with pytest.raises(AssertionError):
         create_app_v4_empty_str()
 
     with pytest.raises(AssertionError):
